@@ -65,6 +65,8 @@ rule is mechanical: **裏付け（evidence）の数が主張の上限**.
      裏付けの無い価値観は「できます」ではなく「どう運用されていますか」に変換する。
 9. **Flag clashes** — if a message conflicts with `positioning.md` (例: 「全員が営業も
    する」 vs 手を動かす席を望む), say so plainly. Fit is a two-way judgment.
+10. **Hand off** — once an interview is scheduled, **prep-interview** consumes this file
+   (via `scripts/interview_brief.py`) for the per-round 語り口 and 逆質問.
 
 ## strength → 表現の上限（この対応表を必ず守る）
 

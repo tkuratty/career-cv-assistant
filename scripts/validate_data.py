@@ -15,6 +15,9 @@ leaves to agent discipline:
   a source that exists, evidence highlight ids exist in career data, and the
   誇張防止ルール — strength must match the number of backing highlights
   (strong ≥ 2 / partial = 1 / none = 0).
+- every interviews/*.md: front-matter links to a real opportunity/company, round
+  is an integer, round_type and status use the known vocabulary, date is
+  YYYY-MM-DD.
 
 Exit code 0 when everything passes, 1 with a per-problem message otherwise.
 
@@ -44,6 +47,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 OUTPUT = ROOT / "cv" / "output"
 COMPANIES = ROOT / "companies"
+INTERVIEWS = ROOT / "interviews"
+
+# Interview rounds (interviews/*.md). Shared with the prep-interview playbook.
+ROUND_TYPES = {"casual", "first", "technical", "manager", "executive", "hr",
+               "reference", "offer"}
+INTERVIEW_STATUSES = ("予定", "完了", "見送り", "キャンセル")
 
 DATE_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 DAY_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
@@ -226,6 +235,49 @@ def check_messages(path: Path, highlight_ids: set[str]) -> None:
                 "(誇張防止: 裏付けの数が主張の上限)")
 
 
+def check_interview(path: Path) -> None:
+    """interviews/<slug>-r<N>.md — front-matter sanity and record links."""
+    text = path.read_text(encoding="utf-8")
+    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    if not text.startswith("---"):
+        err(f"{rel}: missing front-matter")
+        return
+    end = text.find("\n---", 3)
+    if end == -1:
+        err(f"{rel}: unterminated front-matter")
+        return
+    try:
+        fm = yaml.safe_load(text[3:end]) or {}
+    except yaml.YAMLError as exc:
+        err(f"{rel}: bad front-matter ({exc})")
+        return
+
+    opportunity = fm.get("opportunity")
+    if not opportunity:
+        err(f"{rel}: 'opportunity' is required (opportunities/<slug>.md の slug)")
+    elif not (ROOT / "opportunities" / f"{opportunity}.md").exists():
+        err(f"{rel}: opportunity '{opportunity}' has no opportunities/{opportunity}.md")
+
+    company = fm.get("company")
+    if company and not (COMPANIES / str(company)).is_dir():
+        err(f"{rel}: company '{company}' has no companies/{company}/ directory")
+
+    if not isinstance(fm.get("round"), int):
+        err(f"{rel}: round is '{fm.get('round')}' (expected an integer)")
+
+    rtype = fm.get("round_type")
+    if rtype not in ROUND_TYPES:
+        err(f"{rel}: round_type is '{rtype}' (expected one of "
+            f"{', '.join(sorted(ROUND_TYPES))})")
+
+    check_day(fm.get("date"), "date", str(rel))
+
+    status = fm.get("status")
+    if status not in INTERVIEW_STATUSES:
+        err(f"{rel}: status is '{status}' (expected one of "
+            f"{' / '.join(INTERVIEW_STATUSES)})")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Validate data/ and selection files.")
     ap.add_argument("--selection", type=Path, action="append", default=[],
@@ -247,13 +299,18 @@ def main() -> None:
     for msg_path in message_files:
         check_messages(msg_path, highlight_ids)
 
+    interview_files = sorted(INTERVIEWS.glob("*.md")) if INTERVIEWS.is_dir() else []
+    for iv_path in interview_files:
+        check_interview(iv_path)
+
     if errors:
         for e in errors:
             print(f"  ! {e}", file=sys.stderr)
         sys.exit(f"validate_data: {len(errors)} problem(s) found.")
     print(f"validate_data: OK (career/education/certifications/skills"
           f" + {len(selections)} selection file(s)"
-          f" + {len(message_files)} company message file(s))")
+          f" + {len(message_files)} company message file(s)"
+          f" + {len(interview_files)} interview record(s))")
 
 
 if __name__ == "__main__":
