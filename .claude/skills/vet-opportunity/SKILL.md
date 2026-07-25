@@ -79,5 +79,6 @@ to the user's own positioning — not a sales pitch for the role.
   the value is honesty, not encouragement.
 - Keep the employing-entity, salary breakdown, and consolidation risk as first-class
   checklist items — these are where offers to foreign-capital / small local offices bite.
-- Set the opportunity `status` to `検討中` unless the user says otherwise, and link
+- Set the opportunity `status` to `検討中` unless the user says otherwise (vocabulary:
+  AGENTS.md §6 — `検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り`), and link
   company↔opportunity via front-matter and `[[...]]`.

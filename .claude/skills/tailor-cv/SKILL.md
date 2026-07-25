@@ -40,11 +40,13 @@ career highlights — never by inventing new facts.
    ```
    Omit `positions` to include everything in default order; omit a position's
    `highlights` to keep all of that position's highlights.
-5. **Build**:
+5. **Validate & build**:
    ```
+   python scripts/validate_data.py --selection cv/output/<slug>/selection.yaml
    python scripts/build_cv.py --lang <ja|en> \
        --selection cv/output/<slug>/selection.yaml --formats md,pdf,docx
    ```
+   The validator catches unknown position/highlight ids (typos) before the build.
 6. **Report**: show which highlights were chosen and why they fit the JD, and
    list the generated files under `cv/output/<slug>/`.
 

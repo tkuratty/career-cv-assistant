@@ -13,6 +13,10 @@ sample persona** (Taro Yamada / 山田 太郎) in `data/` with the user's real d
 > `python scripts/build_cv.py`.
 
 ## Principles
+- **Privacy first.** Filling in real data turns this repo into a personal instance that
+  must be **private**. Before writing any real data, check the remote's visibility
+  (`gh repo view --json visibility`, or ask the user); if the repo is public, stop and
+  have the user make it private (or change the remote) first. See AGENTS.md §6.
 - **No fabrication.** Only write facts the user gives you. If something is unknown,
   leave the field blank or ask — never invent employers, dates, or achievements.
 - **Keep the format.** Match the existing YAML/Markdown structure exactly (see the
@@ -76,6 +80,7 @@ sample persona** (Taro Yamada / 山田 太郎) in `data/` with the user's real d
 ## Done when
 - `data/*.yaml` and the two policy docs contain the user's real information (no
   "山田 太郎 / Taro Yamada / example.com" left), and
+- `python scripts/validate_data.py` passes (ja/en id sync, date formats, tags), and
 - `python scripts/build_cv.py --lang <ja|en> --formats md` builds a CV that reads
   correctly.
 Verify no sample data remains, e.g.:

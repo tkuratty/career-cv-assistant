@@ -15,8 +15,10 @@ a clean primary link per role, ready to hand to `vet-opportunity`.
 ## Read first (the axis)
 1. `data/positioning.md` — target "form", differentiators, compensation anchor,
    must-checks, and **dealbreakers**. Every include/exclude decision ties back here.
-2. `agents/*.md` front-matter `introduced_companies` and existing `opportunities/*.md` —
-   to **dedupe**: don't re-surface roles already introduced, applied to, or 見送り.
+2. Run `python scripts/list_pipeline.py` — one-shot view of existing opportunities,
+   agents' `introduced_companies`, and `opportunities/seen.yaml` (roles already
+   surfaced/passed on). Use it to **dedupe**: don't re-surface roles already
+   introduced, applied to, 見送り, or previously shown in a shortlist.
 
 ## Sources & how to use them
 ### Job boards (primary) — where on-axis roles actually live
@@ -47,7 +49,8 @@ Japan market (adjust to the user's target):
    remote, dealbreakers). State the query set you'll run.
 2. **Run the searches** — boards first; LinkedIn only if a tool is connected. Pull the
    clean full JD for on-axis hits.
-3. **Dedupe** against `agents/*.md` introduced_companies and existing `opportunities/*.md`.
+3. **Dedupe** against the `list_pipeline.py` output (introduced companies, existing
+   opportunities, and seen.yaml).
 4. **Score against positioning** and rank. For each candidate note: domain fit, role
    "form" (owner vs helpdesk/analyst vs people-manager), which differentiators it uses,
    salary vs the user's floor, commute/remote, and any dealbreaker hit.
@@ -65,5 +68,13 @@ Japan market (adjust to the user's target):
 - **Dedupe** so the user isn't shown roles already introduced/applied/見送り.
 - **Read-only sourcing.** Do **not** apply, save, or message a recruiter on the user's
   behalf — surface the link and let the user act. (Sign-in is the user's too.)
-- This skill **finds and ranks**; it does not write repo files. Records are created by
-  `vet-opportunity` (companies/opportunities) and `tailor-cv` (selection/CV).
+- This skill **finds and ranks**; it does not write repo files, with one exception:
+  after the user reacts to the shortlist, append the roles they pass on (and, if they
+  want, the surfaced-but-parked ones) to `opportunities/seen.yaml` so later runs don't
+  re-surface them:
+  ```yaml
+  seen:
+    - { company: 株式会社◯◯, title: 情報システム, url: https://…, date: 2026-07-25, verdict: 見送り }
+  ```
+  Records proper are created by `vet-opportunity` (companies/opportunities) and
+  `tailor-cv` (selection/CV).

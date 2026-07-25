@@ -1,0 +1,20 @@
+# Keep the public template PII-free (AGENTS.md §6 — Privacy / PII policy).
+# Runs only on the upstream template repo: personal copies hold real data by
+# design and must be private instead.
+name: PII check
+
+on: [push, pull_request]
+
+jobs:
+  check-pii:
+    if: github.repository == 'tkuratty/career-cv-assistant'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_pii.py
+      - run: |
+          pip install -r requirements.txt
+          python scripts/validate_data.py

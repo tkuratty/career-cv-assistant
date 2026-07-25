@@ -35,6 +35,10 @@ playbook you follow." Use whatever file and web tools you have.
 | `agents/<slug>.md` | Recruiter / agency registration |
 | `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
 | `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
+| `scripts/validate_data.py` | Machine-check data conventions (ja/en id sync, dates, selection refs) |
+| `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / seen) for dedupe |
+| `scripts/check_pii.py` | Template-only PII guard (run by CI on the upstream repo) |
+| `opportunities/seen.yaml` | Optional log of roles already surfaced/passed on by find-opportunities |
 | `.claude/skills/<name>/SKILL.md` | The workflow playbooks (canonical) |
 | `.codex/prompts/<name>.md` | Codex slash-command wrappers that point to the same playbooks |
 
@@ -48,6 +52,9 @@ Always match the existing file format before editing.
 - **dates**: `YYYY-MM`. Current role: `end: present`.
 - **No fabrication**: never invent companies, dates, roles, or achievements. If unsure, ask.
 - **skills.yaml**: keep the `categories[].label.{ja,en}` + `items` (string or `{ja,en}`) shape.
+- **Verify after editing**: run `python scripts/validate_data.py` after changing `data/`
+  or any `selection.yaml` — it machine-checks id sync, date formats, tags, and selection
+  references, and is the fastest way to catch a convention break.
 
 ## 4. CV generation
 
@@ -91,6 +98,23 @@ them once they have real records.
 - **Ignored**: generated PDF/docx are `.gitignore`d — don't try to commit them.
 - **Traceability**: company → opportunity → generated CV are linked via front-matter and
   `[[links]]`. Follow this convention for new records.
-- **Privacy**: once a user fills in `data/`, this repo contains **their personal
-  information**. The upstream template is public, but an individual's filled-in instance
-  should be kept **private** (or scrubbed before sharing).
+- **Status vocabulary** (front-matter `status`; don't invent new values — dedupe and
+  `scripts/list_pipeline.py` rely on them):
+  - `opportunities/*.md`: `検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り`
+  - `agents/*.md`: `接触 / 面談予定 / 継続 / 休眠 / 終了`, optionally with a `（…）`
+    qualifier, e.g. `継続（条件付き）`
+- **Pipeline overview**: run `python scripts/list_pipeline.py` to get opportunities,
+  agents (`introduced_companies`) and already-seen roles in one shot — use it for
+  dedupe and 重複応募 checks instead of re-reading every record.
+- **Privacy / PII policy (binding for every agent)**:
+  - The **upstream template repo must contain no PII**. Only the fictional sample
+    persona (Taro Yamada / 山田 太郎) may appear in tracked files. Never commit a real
+    person's name, contact details, employer history, or any other personal data to the
+    public template. Users copy/fork this repo and fill in their own data in their copy.
+  - Once `data/` holds real information, the repo is a **personal instance** and must be
+    **private**. Before writing or committing real personal data, check the remote's
+    visibility (e.g. `gh repo view --json visibility`, or ask the user). If it is
+    public, **stop and have the user make it private first**
+    (`gh repo edit --visibility private`) or point the remote elsewhere.
+  - Never push real personal data to a public remote, and never include the user's
+    personal data in Issues, PRs, or other outward-facing artifacts.

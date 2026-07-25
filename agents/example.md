@@ -9,7 +9,7 @@ website: https://example.com
 license: 00-ユ-000000（有料人材紹介）
 model: 両面型エージェント（想定）
 channel: LinkedIn スカウト（2026-01-01 受信）
-status: 継続（条件付き）
+status: 継続（条件付き）                   # 接触 / 面談予定 / 継続 / 休眠 / 終了（＋任意の（…）補足）
 first_contact: 2026-01-01
 introduced_companies:                      # 重複応募防止（[[agent-policy]] 原則5）
   - example                                # 紹介 → 検討中

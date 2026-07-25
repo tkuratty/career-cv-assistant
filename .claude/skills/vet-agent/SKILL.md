@@ -22,8 +22,9 @@ If the user's real question is "is this job any good?", hand off to `vet-opportu
 ## Read first (the axes)
 1. **`data/agent-policy.md`** — how the user deals with agents. **This is the primary axis.**
 2. `data/positioning.md` — the target "形", comp anchor, dealbreakers. Needed for 条件登録.
-3. Existing `agents/*.md` — check for an existing entry (update, don't duplicate) and for
-   **companies already entrusted to another agent** (重複応募 risk).
+3. Run `python scripts/list_pipeline.py` — check for an existing entry (update, don't
+   duplicate) and for **companies already entrusted to another agent** (重複応募 risk),
+   then open the matching `agents/*.md` for detail.
 
 ## Inputs to gather
 - The **scout message / meeting invite** (paste, Gmail, or forwarded text).
@@ -86,8 +87,9 @@ If the user's real question is "is this job any good?", hand off to `vet-opportu
 
 ## After the meeting (when the user reports back)
 Score the agent on `data/agent-policy.md`'s 評価軸 (案件の具体性 / 「形」の理解 / 情報 / 誠実さ /
-経歴の扱い / 領域), update `status`, append to やりとりログ, and add any company actually
-entrusted to `introduced_companies`. If a 案件 becomes concrete, hand off to `vet-opportunity`.
+経歴の扱い / 領域), update `status` (vocabulary: AGENTS.md §6 — `接触 / 面談予定 / 継続 /
+休眠 / 終了`, optional `（…）` qualifier), append to やりとりログ, and add any company
+actually entrusted to `introduced_companies`. If a 案件 becomes concrete, hand off to `vet-opportunity`.
 
 ## Rules
 - **Anchor to `data/agent-policy.md`.** Every recommendation ties back to one of its principles.
