@@ -30,34 +30,48 @@ to the user's own positioning — not a sales pitch for the role.
    consolidation, and technology/AI posture. Prefer primary sources; note when only
    secondary sources exist. **Never invent facts or figures** — mark unknowns as
    "要確認".
-2. **Fit analysis** — map JD requirements to the user's career data: what is clearly
+2. **企業メッセージの収集** — while researching, capture the company's **own words**:
+   ミッション/ビジョン/バリュー, 行動指針・クレド, 全社 OKR・中期目標, カルチャー,
+   代表/CTO メッセージ, 採用ページの「求める人物像」. Record them with sources in
+   `companies/<slug>/messages.yaml` (format: `companies/example/messages.yaml`),
+   map each to the user's real highlight ids as `evidence`, and set `strength`
+   from the evidence count (`strong` ≥2 / `partial` 1 / `none` 0). Quote verbatim
+   or leave `quote` empty — never paraphrase into a fake quote. Details and the
+   phrasing ceiling: `.claude/skills/align-company-message/SKILL.md`.
+3. **Fit analysis** — map JD requirements to the user's career data: what is clearly
    covered, and the **explicit gaps** (e.g. no financial-industry experience). Propose
    how to **bridge** each gap using existing facts (regulated-industry controlled ops,
    ISMS/ISO27001, change management), without fabricating.
-3. **Positioning gap** — compare the role's level/autonomy to `positioning.md`'s target
+4. **Positioning gap** — compare the role's level/autonomy to `positioning.md`'s target
    (e.g. Head of IT vs an Analyst seat under a Manager). State plainly if it is a
    sideways/down move and hypothesize *why the agent proposed it*.
-4. **Risk analysis** — structural risks: local-function consolidation/offshore, on-call
+5. **Risk analysis** — structural risks: local-function consolidation/offshore, on-call
    for market/regulatory systems, shadow-IT/governance friction for the user's
    automation style, AI-tooling constraints (approved agentic path vs blocked public AI),
    retention/tenure, employing-entity/severance ambiguity.
-5. **Vetting checklist** — instantiate the template below with company-specific items.
-6. **Interview framing** — neutral phrasings for sensitive risks; how to bridge gaps;
+6. **Vetting checklist** — instantiate the template below with company-specific items.
+7. **Interview framing** — neutral phrasings for sensitive risks; how to bridge gaps;
    and the reminder to **sell the judgment layer, not the AI tool** (avoid a
    "can't work without Claude" framing — reframe as "governed value creation").
-7. **Optional (if requested)** — draft agent questions (leveling check + ask for a
+   Run `python scripts/company_message_fit.py --company <slug>` and fold its output in:
+   messages with `strength: strong/partial` give the vocabulary to echo (partial only
+   with a limiting qualifier), and messages with `strength: none` become **逆質問**
+   instead of claims.
+8. **Optional (if requested)** — draft agent questions (leveling check + ask for a
    higher-level seat) and interview-answer starters.
-8. **Write files** — create/update:
+9. **Write files** — create/update:
    - `companies/<slug>/research.md` — front-matter (slug, name, industry, size,
      website, updated, sources) + 概要 / 拠点の位置づけ・存続リスク / AI 活用状況 /
-     本人経歴との相性 / ポジショニングのギャップ / 関連案件 `[[...]]`.
+     企業メッセージ（要約 + `messages.yaml` へのリンク）/ 本人経歴との相性 /
+     ポジショニングのギャップ / 関連案件 `[[...]]`.
+   - `companies/<slug>/messages.yaml` — the structured company messages from step 2.
    - `opportunities/<slug>.md` — front-matter (slug, company, title, agent,
      agent_company, status, employment, location, salary, report_line, team_size,
      jd_url, applied_date, cv, updated) + ポジション概要 / 求める経験 / 魅力 /
      懸念・リスク / 確認チェックリスト / 面接での聞き方メモ / 判断軸 / 選考ログ.
    Use `companies/example/research.md` and `opportunities/example.md` as the
    reference format.
-9. **Report** — summarize fit, the top risk, the positioning read, and the decision
+10. **Report** — summarize fit, the top risk, the positioning read, and the decision
    axis; then point to the two files written.
 
 ## 確認チェックリスト テンプレート（案件ごとに具体化）
@@ -74,7 +88,12 @@ to the user's own positioning — not a sales pitch for the role.
 - **Anchor to `positioning.md`.** Every fit/risk/decision statement should tie back to
   the user's target, differentiators, must-checks, or dealbreakers.
 - **No fabrication.** Company facts come from cited web sources (mark 要確認 when
-  unknown); fit claims come only from data in `data/`.
+  unknown); fit claims come only from data in `data/`. Company messages are quoted
+  verbatim with a source, and their `evidence` is limited to real highlight ids —
+  `python scripts/validate_data.py` enforces both.
+- **企業メッセージに寄せるのは語彙まで。** A value the user cannot back up
+  (`strength: none`) must never be turned into a claim about them; it becomes a
+  question for the interview.
 - **Balanced, not promotional.** Name downgrade/level risks and tail risks explicitly;
   the value is honesty, not encouragement.
 - Keep the employing-entity, salary breakdown, and consolidation risk as first-class

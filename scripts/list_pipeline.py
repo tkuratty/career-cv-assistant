@@ -7,6 +7,9 @@ find-opportunities), so skills don't have to re-scan every file:
 
 - Opportunities: slug / company / title / status / agent_company / updated
 - Agents: slug / agent_company / status / introduced_companies
+- Companies: slug / name / recorded company messages by strength (strong /
+  partial / none) — "none" counts messages you cannot back up with your own
+  highlights, i.e. the ones that must stay out of the application documents
 - Seen: company / title / verdict / date
 
 find-opportunities and vet-agent read this output first to avoid re-surfacing
@@ -83,6 +86,28 @@ def main() -> None:
     print("\n## Agents")
     print(table(agent_rows, ["slug", "agent_company", "status",
                              "introduced_companies"]) if agent_rows else "(none)")
+
+    company_rows = []
+    for path in sorted((ROOT / "companies").glob("*/")):
+        research = path / "research.md"
+        messages = path / "messages.yaml"
+        if not research.exists() and not messages.exists():
+            continue
+        fm = front_matter(research) if research.exists() else {}
+        name = fm.get("name", "-")
+        if messages.exists():
+            doc = yaml.safe_load(messages.read_text(encoding="utf-8")) or {}
+            msgs = doc.get("messages") or []
+            per = {s: sum(1 for m in msgs if m.get("strength") == s)
+                   for s in ("strong", "partial", "none")}
+            company_rows.append([path.name, show(name), str(len(msgs)),
+                                 str(per["strong"]), str(per["partial"]),
+                                 str(per["none"]), show(doc.get("updated"))])
+        else:
+            company_rows.append([path.name, show(name), "-", "-", "-", "-", "-"])
+    print("\n## Companies（企業メッセージの収集状況）")
+    print(table(company_rows, ["slug", "name", "msgs", "strong", "partial",
+                               "none", "updated"]) if company_rows else "(none)")
 
     seen_path = ROOT / "opportunities" / "seen.yaml"
     print("\n## Seen (find-opportunities で提示済み・見送り)")
