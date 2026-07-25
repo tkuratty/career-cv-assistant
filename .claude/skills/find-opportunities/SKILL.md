@@ -30,6 +30,11 @@ Japan market (adjust to the user's target):
 ### LinkedIn (optional) — only if a LinkedIn tool/MCP is connected
 - If a LinkedIn search tool is available, use it; otherwise skip LinkedIn and rely on
   boards + general web search.
+- ⚠️ **This repo ships no LinkedIn setup, on purpose.** There is no official LinkedIn MCP
+  server; third-party ones are mostly scrapers, and using one may violate LinkedIn's terms
+  of service and put the user's account at risk. Do **not** recommend or install one — if
+  the user connects a tool themselves, that call (and its risk) is theirs. Everything below
+  applies only once such a tool is already connected.
 - ⚠️ **LinkedIn job results are ad-polluted**: the top rows are usually promoted
   big-company ads. Do **not** treat the first rows as the best matches. Prefer the
   organic, on-axis rows and pull the clean full JD.
