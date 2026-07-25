@@ -1,0 +1,96 @@
+# AGENTS.md
+
+Agent instructions for **career-cv-assistant** — a template repo that manages your
+career history as a **structured single source of truth** and generates **tailored CVs
+(Japanese 職務経歴書 / English resume) as Markdown, PDF and docx**, plus company and
+recruiter research records.
+
+This file is **agent-neutral**: it applies whether you are **Claude Code** or **Codex**
+(or any other coding agent). Wherever a document says "skill", read it as "a Markdown
+playbook you follow." Use whatever file and web tools you have.
+
+> Cloned this repo? Start with **setup-profile** to replace the sample persona
+> (Taro Yamada / 山田 太郎) with the real user's data. See "Workflows" below.
+
+## 1. Architecture principles
+
+- **Single source of truth**: career data lives **only** in `data/*.yaml`. Never
+  hard-code data into the generated CVs (md/pdf/docx). Don't hold the same fact twice.
+- **data ⇄ selection ⇄ generation split**: `data/` (facts) + a per-opportunity
+  `selection.yaml` (pick / reorder / summary override) + `cv/templates/` (layout)
+  → `scripts/build_cv.py` composes the output.
+- **ja/en pairing**: positions and highlights in `career.{ja,en}.yaml` share the **same
+  `id`**. `selection.yaml` works on ids, language-independently.
+- **Language-neutral tags**: `highlights[].tags` are shared across ja/en and used for
+  JD matching.
+
+## 2. Directory layout
+
+| Path | Role |
+| --- | --- |
+| `data/` | Single source: `profile.{ja,en}.yaml` / `career.{ja,en}.yaml` / `skills.yaml` / `education.{ja,en}.yaml` / `certifications.{ja,en}.yaml` / `positioning.md` (career axis) / `agent-policy.md` (how to deal with recruiters) |
+| `cv/templates/` | Jinja2 Markdown (`*.md.j2`) + Typst PDF (`*.typ`) templates; optional `reference.docx` |
+| `cv/output/<slug>/` | Per-opportunity output (`selection.yaml` + md/pdf/docx). `full/` is the full CV |
+| `companies/<slug>/research.md` | Company research |
+| `agents/<slug>.md` | Recruiter / agency registration |
+| `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
+| `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
+| `.claude/skills/<name>/SKILL.md` | The workflow playbooks (canonical) |
+| `.codex/prompts/<name>.md` | Codex slash-command wrappers that point to the same playbooks |
+
+## 3. Data conventions
+
+Always match the existing file format before editing.
+
+- **id consistency**: when you add a position, add it to **both** `career.ja.yaml` and
+  `career.en.yaml` with the **same `id`**. Never update only one language.
+- **highlight shape**: `{id, text, tags}`. `text` corresponds across ja/en; `tags` are shared.
+- **dates**: `YYYY-MM`. Current role: `end: present`.
+- **No fabrication**: never invent companies, dates, roles, or achievements. If unsure, ask.
+- **skills.yaml**: keep the `categories[].label.{ja,en}` + `items` (string or `{ja,en}`) shape.
+
+## 4. CV generation
+
+Setup (once): `pip install -r requirements.txt`; for PDF/docx also install `pandoc` and
+`typst` (see README).
+
+```
+# Full CV
+python scripts/build_cv.py --lang ja --formats md,pdf,docx
+
+# Tailored (via a selection file)
+python scripts/build_cv.py --lang ja --selection cv/output/<slug>/selection.yaml --formats md,pdf,docx
+```
+
+`--formats` defaults to `md`; pass `pdf`/`docx` explicitly. If `pandoc`/`typst` are
+missing, those formats exit with an install hint (README).
+
+## 5. Workflows (prefer these over ad-hoc work)
+
+Each workflow is a Markdown playbook under `.claude/skills/<name>/SKILL.md`.
+**Claude Code** auto-loads them as skills. **Codex**: run the matching
+`.codex/prompts/<name>.md` slash command, or just read the SKILL.md and follow it.
+
+- **setup-profile** — first-run personalization. Interview the user and replace the
+  sample data in `data/` with their own. **Run this first after cloning.**
+- **find-opportunities** — source new roles against `positioning.md` (job boards; LinkedIn
+  only if a LinkedIn tool is connected) and return a ranked shortlist. Top of the funnel.
+- **tailor-cv** — given a JD or `opportunities/<slug>.md`, pick/reorder highlights into a
+  `selection.yaml` and build the CV.
+- **vet-opportunity** — 壁打ち analysis of a role/company; writes
+  `companies/<slug>/research.md` and `opportunities/<slug>.md`.
+- **vet-agent** — research a recruiter/agency and design the 面談; writes `agents/<slug>.md`.
+
+The `companies/example/`, `opportunities/example.md`, and `agents/example.md` files are
+**format samples** (fictional) that the vet-* skills use as a reference. Users can delete
+them once they have real records.
+
+## 6. Operating rules
+
+- **Tracked**: `*.md` and `selection.yaml` are committed as per-opportunity history.
+- **Ignored**: generated PDF/docx are `.gitignore`d — don't try to commit them.
+- **Traceability**: company → opportunity → generated CV are linked via front-matter and
+  `[[links]]`. Follow this convention for new records.
+- **Privacy**: once a user fills in `data/`, this repo contains **their personal
+  information**. The upstream template is public, but an individual's filled-in instance
+  should be kept **private** (or scrubbed before sharing).

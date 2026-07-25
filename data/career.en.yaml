@@ -1,0 +1,54 @@
+# Career history & highlights (English) — SAMPLE data. Replace with your own.
+# - position.id is shared with career.ja.yaml (per-opportunity selection is language-neutral).
+# - highlight.tags are language-neutral. Used for JD matching and selection.
+positions:
+  - id: example-inc-2021
+    company: Example Inc.
+    title: Corporate IT / Information Systems
+    start: 2021-04
+    end: present
+    summary: Hands-on owner of the information-systems function at a SaaS-centric company — helpdesk, SaaS administration, security operations and in-house automation.
+    highlights:
+      - id: ex-helpdesk
+        text: "Helpdesk & IT operations — rebuilt ad-hoc requests into a GitHub Issue-based queue with visible status; standardized PC provisioning and onboarding."
+        tags: [it-operations, helpdesk, itsm, onboarding]
+      - id: ex-iam
+        text: "Identity & access management — rolled out SSO (SAML/OIDC) and SCIM provisioning across core SaaS; automated account review at on/offboarding."
+        tags: [iam, sso, scim, saas, security]
+      - id: ex-security
+        text: "Security operations — deployed and ran EDR, handled vulnerability/incident response and SaaS permission reviews (day-to-day ops within an ISMS framework)."
+        tags: [security, edr, incident-response, vulnerability-management, isms]
+      - id: ex-automation
+        text: "In-house automation — used no-code workflows (e.g. n8n / GAS) and API integrations to automate request notifications and status sync, cutting manual work."
+        tags: [automation, api, integration, workflow]
+
+  - id: sample-solutions-2017
+    company: Sample Solutions K.K.
+    title: IT Engineer
+    start: 2017-04
+    end: 2021-03
+    summary: Split role across client-project delivery and internal IT — business-system rollout support and infrastructure operations.
+    highlights:
+      - id: ss-erp
+        text: "Business-system rollout — led requirements, user support and vendor coordination for ERP/SFA, driving business-process improvements."
+        tags: [erp, sfa, requirements, vendor-management, support]
+      - id: ss-infra
+        text: "Infrastructure operations — ran cloud (IaaS), internal network and endpoints; set up monitoring and backups."
+        tags: [infrastructure, cloud, networking, operations]
+      - id: ss-dev
+        text: "Internal tooling — designed and built small web tools for process efficiency, from requirements to release."
+        tags: [software-development, web, python]
+
+  - id: demo-mfg-2013
+    company: Demo Manufacturing Co.
+    title: Internal Systems Staff
+    start: 2013-04
+    end: 2017-03
+    summary: In a manufacturer's IS department — internal support for the core system and shop-floor IT operations.
+    highlights:
+      - id: dm-erp-support
+        text: "Core-system support — user support for production/purchasing modules, master-data management, simple reports."
+        tags: [erp, support, manufacturing]
+      - id: dm-ops
+        text: "Shop-floor IT ops — maintained PCs, peripherals and network; first-line helpdesk; internal documentation."
+        tags: [it-operations, helpdesk, manufacturing]

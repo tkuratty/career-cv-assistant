@@ -1,0 +1,6 @@
+# 学歴（日本語）。学歴セクションに出力。サンプルデータ。
+items:
+  - id: example-univ
+    school: 例大学 情報工学部
+    field: 情報工学科
+    year: 2013

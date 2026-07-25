@@ -1,0 +1,54 @@
+# 職歴・実績（日本語） — サンプルデータ。自分の職歴に置き換えてください。
+# - position.id は career.en.yaml と共有（案件ごとの selection は position 単位で言語非依存）。
+# - highlight.tags は言語非依存。JD との突合と取捨選択に使う。
+positions:
+  - id: example-inc-2021
+    company: 株式会社エグザンプル
+    title: コーポレートIT ／ 情報システム
+    start: 2021-04
+    end: present
+    summary: SaaS 中心の事業会社にて、情報システム機能をハンズオンで担当。ヘルプデスク・SaaS 管理・情報セキュリティ運用・社内自動化を横断的に所管。
+    highlights:
+      - id: ex-helpdesk
+        text: "ヘルプデスク・IT 運用 — 問い合わせ対応を GitHub Issue ベースのキューに再構築し、対応状況を可視化。PC キッティングとオンボーディング手順を標準化。"
+        tags: [it-operations, helpdesk, itsm, onboarding]
+      - id: ex-iam
+        text: "ID・アクセス管理 — SSO（SAML/OIDC）と SCIM プロビジョニングを主要 SaaS へ展開し、入退社時のアカウント棚卸しを自動化。"
+        tags: [iam, sso, scim, saas, security]
+      - id: ex-security
+        text: "情報セキュリティ運用 — EDR の導入・運用、脆弱性・インシデント対応、SaaS の権限レビューを担当（ISMS の枠組みに沿った日常運用）。"
+        tags: [security, edr, incident-response, vulnerability-management, isms]
+      - id: ex-automation
+        text: "社内自動化 — ノーコードワークフロー（例: n8n / GAS）と API 連携で、申請フローの通知・ステータス同期を自動化し、手作業を削減。"
+        tags: [automation, api, integration, workflow]
+
+  - id: sample-solutions-2017
+    company: サンプルソリューションズ株式会社
+    title: IT エンジニア
+    start: 2017-04
+    end: 2021-03
+    summary: 受託開発・社内 IT を兼務。業務システムの導入支援とインフラ運用を担当。
+    highlights:
+      - id: ss-erp
+        text: "業務システム導入支援 — ERP／SFA の要件定義・ユーザーサポート・ベンダー折衝を担当し、業務フローの改善を推進。"
+        tags: [erp, sfa, requirements, vendor-management, support]
+      - id: ss-infra
+        text: "インフラ運用 — クラウド（IaaS）・社内ネットワーク・エンドポイントの運用管理、監視とバックアップの整備。"
+        tags: [infrastructure, cloud, networking, operations]
+      - id: ss-dev
+        text: "社内ツール開発 — 業務効率化のための小規模な Web ツールを設計・実装（要件整理からリリースまで）。"
+        tags: [software-development, web, python]
+
+  - id: demo-mfg-2013
+    company: デモ製造株式会社
+    title: 社内システム担当
+    start: 2013-04
+    end: 2017-03
+    summary: 製造業の情報システム部門にて、基幹システムの社内サポートと現場の IT 運用を担当。
+    highlights:
+      - id: dm-erp-support
+        text: "基幹システムの社内サポート — 生産・購買モジュールのユーザーサポート、マスタ管理、簡易な帳票・レポート作成。"
+        tags: [erp, support, manufacturing]
+      - id: dm-ops
+        text: "現場 IT 運用 — PC・周辺機器・ネットワークの保守、ヘルプデスク一次対応、社内マニュアル整備。"
+        tags: [it-operations, helpdesk, manufacturing]

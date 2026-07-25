@@ -1,0 +1,11 @@
+# Certifications / qualifications & training (English). Sample data.
+items:
+  - id: toeic
+    name: "TOEIC 850"
+    date: "2020-06"
+  - id: fe
+    name: "Fundamental Information Technology Engineer (IPA)"
+    date: "2014-10"
+  - id: aws-saa
+    name: "AWS Certified Solutions Architect – Associate"
+    date: "2022-03"

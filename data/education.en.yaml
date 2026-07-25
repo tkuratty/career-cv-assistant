@@ -1,0 +1,6 @@
+# Education (English). Rendered in the Education section. Sample data.
+items:
+  - id: example-univ
+    school: Example University
+    field: Computer Science
+    year: 2013

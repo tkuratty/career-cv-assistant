@@ -1,0 +1,11 @@
+# 資格・免許・研修（日本語）。サンプルデータ。
+items:
+  - id: toeic
+    name: "TOEIC 850"
+    date: "2020年6月"
+  - id: fe
+    name: "基本情報技術者試験"
+    date: "2014年10月"
+  - id: aws-saa
+    name: "AWS Certified Solutions Architect – Associate"
+    date: "2022年3月"

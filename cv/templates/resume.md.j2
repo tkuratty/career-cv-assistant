@@ -1,0 +1,59 @@
+{# English resume template. build_cv.py passes a pre-resolved context.
+   Keep every {% ... %} control tag on its own line. With trim_blocks +
+   lstrip_blocks a control-only line produces no output/newline. #}
+# {{ profile.name_line }}
+
+{{ profile.contact_line }}
+{% if profile.links_line %}
+{{ profile.links_line }}
+{% endif %}
+
+## Summary
+
+{{ summary | trim }}
+
+## Experience
+
+{% for p in positions %}
+### {{ p.title }} — {{ p.company }}
+
+{{ p.start }} – {{ p.end }}
+
+{% if p.summary %}
+{{ p.summary }}
+
+{% endif %}
+{% for h in p.highlights %}
+- {{ h.text }}
+{% endfor %}
+
+{% endfor %}
+## Skills
+
+{% for c in skills %}
+- **{{ c.label }}**: {{ c['items'] | join(', ') }}
+{% endfor %}
+{% if education_lines %}
+
+## Education
+
+{% for line in education_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}
+{% if cert_lines %}
+
+## Certifications
+
+{% for line in cert_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}
+{% if language_lines %}
+
+## Languages
+
+{% for line in language_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}

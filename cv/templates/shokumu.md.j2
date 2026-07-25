@@ -1,0 +1,66 @@
+{# 日本語 職務経歴書テンプレート。build_cv.py が解決済みの context を渡す。
+   制御タグ（{% ... %}）は必ず単独行に置くこと。trim_blocks + lstrip_blocks 前提で、
+   単独行の制御タグは出力に空行を残さない。 #}
+# 職務経歴書
+
+{{ profile.name_line }}
+{{ profile.contact_line }}
+{% if profile.links_line %}
+{{ profile.links_line }}
+{% endif %}
+
+## 職務要約
+
+{{ summary | trim }}
+
+## 職務経歴
+
+{% for p in positions %}
+### {{ p.company }} — {{ p.title }}
+
+{{ p.start }} 〜 {{ p.end }}
+
+{% if p.summary %}
+{{ p.summary }}
+
+{% endif %}
+{% for h in p.highlights %}
+- {{ h.text }}
+{% endfor %}
+
+{% endfor %}
+## 活かせる経験・スキル
+
+{% for c in skills %}
+- **{{ c.label }}**: {{ c['items'] | join('、') }}
+{% endfor %}
+{% if cert_lines %}
+
+## 資格・免許
+
+{% for line in cert_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}
+{% if language_lines %}
+
+## 語学
+
+{% for line in language_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}
+{% if education_lines %}
+
+## 学歴
+
+{% for line in education_lines %}
+- {{ line }}
+{% endfor %}
+{% endif %}
+{% if profile.self_pr %}
+
+## 自己PR
+
+{{ profile.self_pr | trim }}
+{% endif %}

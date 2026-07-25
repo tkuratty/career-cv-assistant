@@ -1,0 +1,23 @@
+# Base profile (English) — single source used for the CV header.
+# ▼▼ This is SAMPLE data. Replace it with your own via the setup-profile skill or by editing directly. ▼▼
+name: Taro Yamada
+email: taro.yamada@example.com
+phone: "090-0000-0000"
+location: "Tokyo, Japan"
+links:
+  linkedin: https://www.linkedin.com/in/example
+
+# Default professional summary (overridable per opportunity via selection.yaml).
+summary: |
+  Corporate IT / information-systems generalist at operating companies. I run IT
+  functions hands-on with a small team — from helpdesk, SaaS administration and
+  security operations to business-system (ERP/SFA) rollout and in-house automation.
+  Grounded in an early career supporting manufacturing internal systems, then
+  broadened into designing and running modern, SaaS-centric IT environments.
+  Strength: owning operations + security + automation single-handedly. Bilingual JP/EN.
+  Open to Corporate IT / Information Systems / IT Manager roles.
+
+# Spoken languages (rendered in the Languages section).
+languages:
+  - { name: Japanese, level: Native }
+  - { name: English, level: "Business (TOEIC 850)" }

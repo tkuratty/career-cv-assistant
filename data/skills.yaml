@@ -1,0 +1,49 @@
+# スキル一覧 / Skills — 技術名は固有名詞が多いため 1 ファイルに ja/en ラベル併記。
+# items は文字列（言語共通）か {ja, en}（説明的な項目）で記述できる。
+# ▼▼ サンプルデータ。ターゲット職種に合わせて並べ替え・追記してください（上位ほど強調される）。 ▼▼
+categories:
+  - key: corporate_it
+    label: { ja: コーポレートIT / 情報システム, en: Corporate IT / IT Operations }
+    items:
+      - { ja: IT運用・ヘルプデスク（ITSM）, en: "IT Operations & Helpdesk (ITSM)" }
+      - { ja: インシデント管理, en: Incident Management }
+      - { ja: ID・アクセス管理（SSO / SCIM）, en: "Identity & Access Management (SSO / SCIM)" }
+      - { ja: SaaS管理・IT調達・ライセンス管理, en: "SaaS management, IT procurement & licensing" }
+      - { ja: 技術文書化・ベンダー管理, en: "Technical documentation, vendor management" }
+
+  - key: security
+    label: { ja: 情報セキュリティ, en: Information Security }
+    items:
+      - { ja: インシデント対応・脆弱性管理, en: "Incident response, vulnerability management" }
+      - { ja: "ISO/IEC 27001・ISMS（枠組みに沿った運用）", en: "ISO/IEC 27001, ISMS (framework-aligned ops)" }
+      - { ja: エンドポイントセキュリティ（EDR）, en: "Endpoint security (EDR)" }
+
+  - key: automation
+    label: { ja: 自動化, en: Automation }
+    items:
+      - { ja: ワークフロー自動化・業務プロセス自動化, en: "Workflow & business-process automation" }
+      - { ja: API 連携, en: "API integration" }
+      - "n8n"
+      - "Google Apps Script (GAS)"
+
+  - key: business_systems
+    label: { ja: 業務システム / ERP, en: Business Systems / ERP }
+    items:
+      - { ja: ERP（導入支援・ユーザーサポート）, en: "ERP (rollout support, user support)" }
+      - { ja: SFA / CRM, en: "SFA / CRM" }
+
+  - key: cloud_infra
+    label: { ja: クラウド・インフラ, en: Cloud & Infrastructure }
+    items:
+      - { ja: クラウド（IaaS）, en: "Cloud (IaaS)" }
+      - { ja: Google Workspace（管理）, en: Google Workspace Administration }
+      - GitHub
+      - { ja: ネットワーク・エンドポイント運用, en: "Network & endpoint operations" }
+
+  - key: languages
+    label: { ja: プログラミング言語, en: Languages }
+    items: [Python, JavaScript, SQL, HTML/CSS]
+
+  - key: os
+    label: { ja: OS, en: OS }
+    items: [Windows, macOS, Linux]
