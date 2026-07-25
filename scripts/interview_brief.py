@@ -8,9 +8,12 @@ Nothing here is new data — it merges, in reading order:
 3. 語れる範囲    … companies/<slug>/messages.yaml via company_message_fit's strength
                    ceiling — strong は断定可 / partial は限定詞つき / none は逆質問へ
 4. 提出済み CV   … cv/output/<slug>/selection.yaml の highlight（深掘りされる前提）
-5. 懸念・確認    … opportunities/<slug>.md の 懸念・リスク と 確認チェックリスト
-6. 逆質問        … messages.yaml の interview_probe ＋ 未確認のチェックリスト
-7. 判断軸        … data/positioning.md（面接は相互評価）
+5. 想定質問      … 提出 CV の深掘り ＋ 案件のギャップ（橋渡しが必要な要件）＋ 企業メッセージの
+                   partial/none ＋ 過去に実際に聞かれた質問（asked[] の weak/missed 優先）
+                   ＋ question-bank.md の round_type 別・共通の定番
+6. 懸念・確認    … opportunities/<slug>.md の 懸念・リスク と 確認チェックリスト
+7. 逆質問        … messages.yaml の interview_probe ＋ 未確認のチェックリスト
+8. 判断軸        … data/positioning.md（面接は相互評価）
 
 Missing pieces are reported as 未作成 instead of failing, so the brief is usable
 early in a pipeline.
@@ -44,6 +47,8 @@ COMPANIES = ROOT / "companies"
 OPPORTUNITIES = ROOT / "opportunities"
 INTERVIEWS = ROOT / "interviews"
 OUTPUT = ROOT / "cv" / "output"
+QUESTION_BANK = (ROOT / ".claude" / "skills" / "prep-interview" /
+                 "references" / "question-bank.md")
 
 # Windows consoles often use a legacy codepage that cannot print Japanese.
 for _stream in (sys.stdout, sys.stderr):
@@ -90,6 +95,51 @@ def interview_files(opportunity: str) -> list[tuple[dict, str, Path]]:
         if fm.get("opportunity") == opportunity:
             records.append((fm, body, path))
     return records
+
+
+def past_asked(opportunity: str, round_type: str, current: Path | None) -> list[dict]:
+    """Questions actually asked before, reusable for this round.
+
+    Pulled from every other interview record's `asked[]`: earlier rounds of the same
+    opportunity, and other opportunities' rounds of the same type. `weak` / `missed`
+    answers come first — those are the ones that bite twice.
+    """
+    rows: list[dict] = []
+    for path in sorted(INTERVIEWS.glob("*.md")):
+        if current is not None and path == current:
+            continue
+        fm, _ = split_front_matter(path)
+        same_opp = fm.get("opportunity") == opportunity
+        same_type = bool(round_type) and fm.get("round_type") == round_type
+        if not (same_opp or same_type):
+            continue
+        scope = (f"同じ案件 r{fm.get('round', '?')}" if same_opp
+                 else f"他案件の {round_type}: {fm.get('opportunity')}")
+        for item in fm.get("asked") or []:
+            if not item.get("q"):
+                continue
+            rows.append({"q": item["q"], "answered": item.get("answered", "-"),
+                         "note": item.get("note", ""), "scope": scope})
+    order = {"missed": 0, "weak": 1, "ok": 2}
+    return sorted(rows, key=lambda r: order.get(r["answered"], 3))
+
+
+def bank_lines(round_type: str | None) -> list[str]:
+    """Bullets from question-bank.md — a round_type section, or the common one."""
+    if not QUESTION_BANK.exists():
+        return []
+    text = QUESTION_BANK.read_text(encoding="utf-8")
+    if round_type:
+        m = re.search(rf"^##\s+`{re.escape(round_type)}`.*$", text, re.MULTILINE)
+    else:
+        m = re.search(r"^##\s+共通の定番.*$", text, re.MULTILINE)
+    if not m:
+        return []
+    rest = text[m.end():]
+    nxt = re.search(r"^##\s+", rest, re.MULTILINE)
+    chunk = rest[:nxt.start()] if nxt else rest
+    return [ln.lstrip("- ").strip() for ln in chunk.splitlines()
+            if ln.strip().startswith("- ")]
 
 
 def pick_round(records: list[tuple[dict, str, Path]], want: int | None):
@@ -213,8 +263,65 @@ def build(opportunity: str, want_round: int | None, lang: str, md: bool) -> str:
                 out.append(f"{sub}{hid}: {hl['text'] if hl else '（career データに無し）'}")
     out.append("")
 
-    # 5. 懸念と未確認のチェックリスト
-    out.append(f"{h2}5. 懸念と未確認のチェックリスト{tail}")
+    # 5. 想定質問（自動生成）
+    out.append(f"{h2}5. 想定質問（収集情報から自動生成）{tail}")
+    round_type = (rec[0].get("round_type") if rec else None) or ""
+    submitted = []
+    if sel_path.exists():
+        for entry in (load(sel_path).get("positions") or []):
+            submitted += list(entry.get("highlights") or [])
+
+    if submitted:
+        out.append(f"{b}[提出 CV の深掘り] 出した実績は全部聞かれる前提で、事実→行動→結果を用意")
+        for hid in submitted:
+            hl = highlights.get(hid)
+            label = (hl["text"].split("—")[0].strip() if hl else hid)
+            out.append(f"{sub}{label}: 状況・自分が下した判断・結果を具体的に（{hid}）")
+    else:
+        out.append(f"{b}[提出 CV の深掘り] selection.yaml が未作成 — tailor-cv 後にここが埋まります")
+
+    bridges = [ln for ln in section(opp_body, "求める経験") if "橋渡し" in ln]
+    if bridges:
+        out.append(f"{b}[ギャップ] 案件側が「橋渡しが必要」とした要件 — 盛らずに"
+                   "「やっていません + 近いのはこれ」で答える")
+        for line in bridges:
+            out.append(f"{sub}{line.lstrip('- ')}")
+
+    if messages.exists():
+        rows = analyze(load(messages), highlights)
+        weak = [r for r in rows if r["strength"] in ("partial", "none")]
+        if weak:
+            out.append(f"{b}[企業メッセージ由来] 企業が重視するが自分の裏付けが薄い論点")
+            for r in weak:
+                if r["strength"] == "partial":
+                    out.append(f"{sub}「{r['label']}」— どの範囲で経験がありますか"
+                               "（範囲を先に限定してから答える）")
+                else:
+                    out.append(f"{sub}「{r['label']}」— 経験はありますか"
+                               "（**無いと答える**。取り繕わず逆質問に転じる）")
+
+    reuse = past_asked(opportunity, round_type, rec[2] if rec else None)
+    if reuse:
+        out.append(f"{b}[再出題] 過去に実際に聞かれた質問（weak / missed を優先）")
+        for item in reuse:
+            note = f" — {item['note']}" if item.get("note") else ""
+            out.append(f"{sub}[{item['answered']}] {item['q']}"
+                       f"（{item['scope']}）{note}")
+
+    bank = bank_lines(round_type)
+    if bank:
+        out.append(f"{b}[{round_type} の定番] question-bank.md より（一般論・取りこぼし防止）")
+        for line in bank:
+            out.append(f"{sub}{line}")
+    common = bank_lines(None)
+    if common:
+        out.append(f"{b}[共通の定番] 転職理由・志望動機・強み弱み・条件（question-bank.md）")
+        for line in common:
+            out.append(f"{sub}{line}")
+    out.append("")
+
+    # 6. 懸念と未確認のチェックリスト
+    out.append(f"{h2}6. 懸念と未確認のチェックリスト{tail}")
     concerns = section(opp_body, "懸念・リスク")
     for line in concerns:
         out.append(f"{b}{line.lstrip('- ')}")
@@ -228,8 +335,8 @@ def build(opportunity: str, want_round: int | None, lang: str, md: bool) -> str:
         out.append(f"{b}（案件ファイルに懸念・チェックリストの記載がありません）")
     out.append("")
 
-    # 6. 逆質問（優先順）
-    out.append(f"{h2}6. 逆質問（優先順）{tail}")
+    # 7. 逆質問（優先順）
+    out.append(f"{h2}7. 逆質問（優先順）{tail}")
     asks = list(dict.fromkeys(probes))
     for line in dict.fromkeys(unchecked):
         asks.append(f"（未確認）{line.replace('- [ ]', '').strip()}")
@@ -244,8 +351,8 @@ def build(opportunity: str, want_round: int | None, lang: str, md: bool) -> str:
         out.append(f"{b}（messages.yaml の interview_probe と案件チェックリストから自動収集します）")
     out.append("")
 
-    # 7. 判断軸
-    out.append(f"{h2}7. 判断軸リマインド（面接は相互評価）{tail}")
+    # 8. 判断軸
+    out.append(f"{h2}8. 判断軸リマインド（面接は相互評価）{tail}")
     positioning = DATA / "positioning.md"
     if positioning.exists():
         text = positioning.read_text(encoding="utf-8")

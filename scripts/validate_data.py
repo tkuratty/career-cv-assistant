@@ -17,7 +17,8 @@ leaves to agent discipline:
   (strong ≥ 2 / partial = 1 / none = 0).
 - every interviews/*.md: front-matter links to a real opportunity/company, round
   is an integer, round_type and status use the known vocabulary, date is
-  YYYY-MM-DD.
+  YYYY-MM-DD, and each asked[] entry carries a question plus an answered value
+  (ok / weak / missed).
 
 Exit code 0 when everything passes, 1 with a per-problem message otherwise.
 
@@ -53,6 +54,9 @@ INTERVIEWS = ROOT / "interviews"
 ROUND_TYPES = {"casual", "first", "technical", "manager", "executive", "hr",
                "reference", "offer"}
 INTERVIEW_STATUSES = ("予定", "完了", "見送り", "キャンセル")
+# asked[]: how the question actually went. weak/missed are re-surfaced by
+# scripts/interview_brief.py as 再出題 for later rounds.
+ANSWERED_VALUES = ("ok", "weak", "missed")
 
 DATE_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 DAY_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
@@ -276,6 +280,16 @@ def check_interview(path: Path) -> None:
     if status not in INTERVIEW_STATUSES:
         err(f"{rel}: status is '{status}' (expected one of "
             f"{' / '.join(INTERVIEW_STATUSES)})")
+
+    for n, item in enumerate(fm.get("asked") or [], 1):
+        where = f"{rel} asked[{n}]"
+        if not isinstance(item, dict) or not item.get("q"):
+            err(f"{where}: 'q' (the question actually asked) is required")
+            continue
+        answered = item.get("answered")
+        if answered not in ANSWERED_VALUES:
+            err(f"{where}: answered is '{answered}' (expected one of "
+                f"{' / '.join(ANSWERED_VALUES)})")
 
 
 def main() -> None:

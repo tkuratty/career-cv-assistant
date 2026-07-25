@@ -35,11 +35,11 @@ playbook you follow." Use whatever file and web tools you have.
 | `companies/<slug>/messages.yaml` | The company's own messaging (MVV / OKR / 行動指針 / 経営・採用メッセージ) with sources, mapped to the user's highlights as evidence |
 | `agents/<slug>.md` | Recruiter / agency registration |
 | `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
-| `interviews/<slug>-r<N>.md` | One interview round: 目的・面接官（公開情報のみ）・語り口・想定質問・逆質問・振り返り |
+| `interviews/<slug>-r<N>.md` | One interview round: 目的・面接官（公開情報のみ）・語り口・想定質問・逆質問・振り返り。`asked[]` に実際に聞かれた質問を残すと次ラウンドの想定質問に戻る |
 | `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
 | `scripts/validate_data.py` | Machine-check data conventions (ja/en id sync, dates, selection refs) |
 | `scripts/company_message_fit.py` | 企業メッセージ × 本人の実績の整合レポート（誇張の上限を明示） |
-| `scripts/interview_brief.py` | 面接前ブリーフ（企業調査 + 企業メッセージ + 提出 CV + 案件の懸念を1枚に） |
+| `scripts/interview_brief.py` | 面接前ブリーフ（企業調査 + 企業メッセージ + 提出 CV + 案件の懸念 + **想定質問の自動生成**） |
 | `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / companies / seen) for dedupe |
 | `scripts/check_pii.py` | Template-only PII guard (run by CI on the upstream repo) |
 | `opportunities/seen.yaml` | Optional log of roles already surfaced/passed on by find-opportunities |
@@ -140,6 +140,11 @@ them once they have real records.
   - `interviews/*.md`: `予定 / 完了 / 見送り / キャンセル`, with
     `round_type` ∈ `casual / first / technical / manager / executive / hr /
     reference / offer` (validated by `scripts/validate_data.py`)
+- **想定質問は蓄積する**: after every round, record what was actually asked in the
+  interview record's `asked[]` (`q` + `answered: ok / weak / missed` + note).
+  `scripts/interview_brief.py` re-surfaces `weak`/`missed` as 再出題 in later rounds of
+  the same opportunity **and** in other opportunities' rounds of the same `round_type`.
+  A round whose `asked[]` is empty loses that knowledge for good.
 - **Pipeline overview**: run `python scripts/list_pipeline.py` to get opportunities,
   agents (`introduced_companies`), companies (企業メッセージの収集状況), interviews and
   already-seen roles in one shot — use it for dedupe and 重複応募 checks instead of
