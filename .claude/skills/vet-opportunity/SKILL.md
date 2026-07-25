@@ -72,7 +72,8 @@ to the user's own positioning — not a sales pitch for the role.
    Use `companies/example/research.md` and `opportunities/example.md` as the
    reference format.
 10. **Report** — summarize fit, the top risk, the positioning read, and the decision
-   axis; then point to the two files written.
+   axis; then point to the files written. If the user is moving forward, hand off:
+   **tailor-cv** for the application, **prep-interview** once a round is scheduled.
 
 ## 確認チェックリスト テンプレート（案件ごとに具体化）
 1. **案件・エージェントの素性**: 直接取引か二次請けか / 紹介実績 / 「後任」の裏取り / 年収内訳。

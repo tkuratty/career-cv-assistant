@@ -115,13 +115,15 @@ Codex uses `.codex/prompts/<name>.md` or reads the SKILL.md directly).
 | **vet-opportunity** | 壁打ち a role/company; write `companies/` & `opportunities/` records. |
 | **vet-agent** | Research a recruiter and design the 面談; write an `agents/` record. |
 | **align-company-message** | Record a company's MVV / OKR / 行動指針 with sources, back each with your real highlights, and derive 誇張しない wording for documents & interviews. |
+| **prep-interview** | Prepare a scheduled interview round: brief, industry/round playbook, interviewer research (public info only), answer skeletons, 逆質問, 振り返り. |
 
-`companies/example/`, `opportunities/example.md`, `agents/example.md` are fictional format
-samples the vet-* workflows reference. Delete them once you have real records.
+`companies/example/`, `opportunities/example.md`, `agents/example.md`,
+`interviews/example-r1.md` are fictional format samples the workflows reference. Delete
+them once you have real records.
 
-🇯🇵 6つのワークフロー（setup-profile / find-opportunities / tailor-cv / vet-opportunity /
-vet-agent / align-company-message）を用意。Claude はスキルとして自動認識、Codex は
-`.codex/prompts/` かスキルファイル直読みで使えます。
+🇯🇵 7つのワークフロー（setup-profile / find-opportunities / tailor-cv / vet-opportunity /
+vet-agent / align-company-message / prep-interview）を用意。Claude はスキルとして自動認識、
+Codex は `.codex/prompts/` かスキルファイル直読みで使えます。
 
 ## Company messages without the exaggeration
 
@@ -154,6 +156,37 @@ recorded as evidence yet.
 🇯🇵 企業の MVV / OKR / 行動指針を出典つきで `companies/<slug>/messages.yaml` に記録し、
 **自分の実績（evidence）の数**で「どこまで言い切ってよいか」を機械的に決めます。裏付けの
 無い項目は書類で主張せず、面接の逆質問に回す — これが誇張を防ぐ仕組みです。
+
+## Interview preparation
+
+When an interview is scheduled, `prep-interview` turns the records you already have into
+a prepared round and writes `interviews/<slug>-r<N>.md`:
+
+```bash
+python scripts/interview_brief.py --opportunity <slug> --round 1
+```
+
+The brief merges, in one page: the round and its interviewers (role + public sources),
+the company research, **what you may claim** from the company's messages
+(`strong` / `partial` / `none`), the highlights on the CV you actually submitted (i.e.
+what gets probed), the opportunity's unanswered checklist, a prioritized 逆質問 list, and
+your own decision axis. Anything missing is reported as 未作成 rather than failing.
+
+Two more pieces back it up:
+
+- `.claude/skills/prep-interview/references/interview-playbooks.md` — typical hiring
+  processes by company type (外資 / 日系大手 / SaaS / SIer / 製造 / 金融 / コンサル) and
+  what each round type (`casual / first / technical / manager / executive / hr /
+  reference / offer`) is for. Explicitly 一般論 — confirm the real process with the
+  recruiter.
+- Interviewer research is limited to **public professional information** (role, public
+  talks, technical posts), always with sources, never private life or sensitive
+  attributes — see AGENTS.md §6.
+
+🇯🇵 面接が決まったら `prep-interview`。業界別・ラウンド別の一般的な進め方（プレイブック）に、
+面接官の公開情報リサーチと、収集済みの企業情報・提出済み CV を束ねた事前ブリーフを組み合わせ、
+`interviews/<slug>-r<N>.md` に想定質問・逆質問・振り返りまで残します。ここでも
+「裏付けの無いことは主張せず逆質問に回す」ルールが効きます。
 
 ## Toolchain (PDF / docx)
 

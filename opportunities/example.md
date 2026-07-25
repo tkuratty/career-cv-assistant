@@ -46,5 +46,9 @@ updated: 2026-01-01
 ## 判断軸
 - [[positioning]] の判断軸に照らして「受けるか／見送るか」。
 
+## 面接
+- [[interviews/example-r1]] — 一次（first）/ 2026-02-10 / 予定
+- 事前ブリーフ: `python scripts/interview_brief.py --opportunity example --round 1`
+
 ## 選考ログ
 - 2026-01-01: （見本）案件を登録。企業調査・リスク分析を実施。

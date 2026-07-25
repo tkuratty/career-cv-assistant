@@ -10,6 +10,7 @@ find-opportunities), so skills don't have to re-scan every file:
 - Companies: slug / name / recorded company messages by strength (strong /
   partial / none) — "none" counts messages you cannot back up with your own
   highlights, i.e. the ones that must stay out of the application documents
+- Interviews: slug / opportunity / round / round_type / date / status
 - Seen: company / title / verdict / date
 
 find-opportunities and vet-agent read this output first to avoid re-surfacing
@@ -108,6 +109,16 @@ def main() -> None:
     print("\n## Companies（企業メッセージの収集状況）")
     print(table(company_rows, ["slug", "name", "msgs", "strong", "partial",
                                "none", "updated"]) if company_rows else "(none)")
+
+    interview_rows = []
+    for path in sorted((ROOT / "interviews").glob("*.md")):
+        fm = front_matter(path)
+        interview_rows.append([show(fm.get(k)) for k in
+                               ("slug", "opportunity", "round", "round_type",
+                                "date", "status")])
+    print("\n## Interviews")
+    print(table(interview_rows, ["slug", "opportunity", "round", "round_type",
+                                 "date", "status"]) if interview_rows else "(none)")
 
     seen_path = ROOT / "opportunities" / "seen.yaml"
     print("\n## Seen (find-opportunities で提示済み・見送り)")

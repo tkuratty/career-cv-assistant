@@ -35,9 +35,11 @@ playbook you follow." Use whatever file and web tools you have.
 | `companies/<slug>/messages.yaml` | The company's own messaging (MVV / OKR / 行動指針 / 経営・採用メッセージ) with sources, mapped to the user's highlights as evidence |
 | `agents/<slug>.md` | Recruiter / agency registration |
 | `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
+| `interviews/<slug>-r<N>.md` | One interview round: 目的・面接官（公開情報のみ）・語り口・想定質問・逆質問・振り返り |
 | `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
 | `scripts/validate_data.py` | Machine-check data conventions (ja/en id sync, dates, selection refs) |
 | `scripts/company_message_fit.py` | 企業メッセージ × 本人の実績の整合レポート（誇張の上限を明示） |
+| `scripts/interview_brief.py` | 面接前ブリーフ（企業調査 + 企業メッセージ + 提出 CV + 案件の懸念を1枚に） |
 | `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / companies / seen) for dedupe |
 | `scripts/check_pii.py` | Template-only PII guard (run by CI on the upstream repo) |
 | `opportunities/seen.yaml` | Optional log of roles already surfaced/passed on by find-opportunities |
@@ -111,6 +113,11 @@ Each workflow is a Markdown playbook under `.claude/skills/<name>/SKILL.md`.
 - **vet-opportunity** — 壁打ち analysis of a role/company; writes
   `companies/<slug>/research.md` and `opportunities/<slug>.md`.
 - **vet-agent** — research a recruiter/agency and design the 面談; writes `agents/<slug>.md`.
+- **prep-interview** — prepare a scheduled interview round: pre-interview brief, the
+  企業タイプ × ラウンド種別 playbook
+  (`.claude/skills/prep-interview/references/interview-playbooks.md`), interviewer
+  research from **public professional info only**, answer skeletons and 逆質問;
+  writes `interviews/<slug>-r<N>.md` and records the 振り返り afterwards.
 - **align-company-message** — collect the company's MVV / OKR / 行動指針 into
   `companies/<slug>/messages.yaml`, back each with the user's real highlights, and turn
   that into 応募書類の言い回し and 面接での語り口・逆質問 within the `strength` ceiling.
@@ -130,10 +137,13 @@ them once they have real records.
   - `opportunities/*.md`: `検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り`
   - `agents/*.md`: `接触 / 面談予定 / 継続 / 休眠 / 終了`, optionally with a `（…）`
     qualifier, e.g. `継続（条件付き）`
+  - `interviews/*.md`: `予定 / 完了 / 見送り / キャンセル`, with
+    `round_type` ∈ `casual / first / technical / manager / executive / hr /
+    reference / offer` (validated by `scripts/validate_data.py`)
 - **Pipeline overview**: run `python scripts/list_pipeline.py` to get opportunities,
-  agents (`introduced_companies`), companies (企業メッセージの収集状況) and already-seen
-  roles in one shot — use it for dedupe and 重複応募 checks instead of re-reading every
-  record.
+  agents (`introduced_companies`), companies (企業メッセージの収集状況), interviews and
+  already-seen roles in one shot — use it for dedupe and 重複応募 checks instead of
+  re-reading every record.
 - **No exaggeration (binding for 応募書類 and 面接)**: aligning with a company's message
   means choosing which real facts to lead with and borrowing its vocabulary — never
   upgrading the user's scope, role or scale. What the user cannot back up becomes a
@@ -150,3 +160,12 @@ them once they have real records.
     (`gh repo edit --visibility private`) or point the remote elsewhere.
   - Never push real personal data to a public remote, and never include the user's
     personal data in Issues, PRs, or other outward-facing artifacts.
+  - **Third parties (interviewers, recruiters)**: records like `interviews/*.md` and
+    `agents/*.md` may name people other than the user. Collect **only public,
+    professional information** — role and remit, public talks, technical blog posts,
+    published professional profiles — always with the source URL, and only as much as
+    shapes the conversation. Never collect or store private life, personal social-media
+    activity, or sensitive attributes (political/religious belief, health, origin), and
+    never attempt exhaustive name matching; leave `要確認` when identification is
+    uncertain. Real third-party names must never reach the public template repo — the
+    sample records use fictional people.
