@@ -22,6 +22,11 @@ interviewers:
     role_in_process: 同席（転職理由・条件面の確認）
     focus: 転職理由の一貫性、入社時期
     sources: []
+asked: []                         # 面接後に記入。次ラウンド／他案件の同 round_type に再出題される
+  # - q: 一人で運用を回した経験を具体的に
+  #   topic: it-operations        # highlights[].tags / messages の signals と同じ語彙
+  #   answered: ok                # ok / weak / missed（weak・missed が優先的に再出題される）
+  #   note: 具体例は出せたが数値が曖昧だった
 updated: 2026-01-01
 ---
 
@@ -55,6 +60,10 @@ updated: 2026-01-01
   - none「AI 前提の業務設計」→ 主張しない。逆質問（承認経路・データ分類）に回す。
 
 ## 想定質問と回答骨子
+- **出発点は自動生成**: `python scripts/interview_brief.py --opportunity example --round 1` の
+  「5. 想定質問」— 提出 CV の深掘り / 案件のギャップ / 企業メッセージの partial・none /
+  過去に実際に聞かれた質問（`asked[]` の weak・missed）/ round_type の定番。
+  ここではそれに**回答骨子**を肉付けする。
 - 質問ごとに **事実 → 行動 → 結果** の順で骨子だけ。`data/career.*.yaml` の記述を超えない。
   評価語（主導・全社・大幅）を足さない。
 - （見本）「一人で運用を回した経験は？」
@@ -74,6 +83,8 @@ updated: 2026-01-01
 - [ ] 話す順番（結論 → 具体 → 学び）を 1 度声に出した
 
 ## 振り返り（実施後に記入）
-- 実際に聞かれたこと / 手応え / 相手の反応
-- 次ラウンドへの申し送り（深掘りされた点、答えに詰まった点）
-- `opportunities/example.md` の `status` と選考ログを更新する
+- **`asked[]`（front-matter）を必ず埋める** — 実際に聞かれた質問と手応え（ok / weak / missed）。
+  ここが次ラウンド・他案件の同 round_type の想定質問に自動で戻る（＝同じ質問で二度詰まらない）。
+- 手応え / 相手の反応 / 次ラウンドへの申し送り。
+- 面接で分かった事実は `companies/example/messages.yaml` や `research.md` の要確認を更新する。
+- `opportunities/example.md` の `status` と選考ログを更新する。

@@ -64,20 +64,32 @@ open questions. Nothing new gets invented.
    `companies/<slug>/messages.yaml`: `strong` = state as fact, `partial` = only with a
    limiting qualifier (「小規模ながら」「〜の範囲で」), `none` = **do not claim it**, turn it
    into a 逆質問. Borrow vocabulary, never upgrade the facts.
-6. **想定質問と回答骨子** — for the highlights in the submitted `selection.yaml` plus the
-   round's typical questions, write **事実 → 行動 → 結果** skeletons. Every fact comes from
-   `data/career.*.yaml`; no evaluative inflation (主導・全社・大幅). Include the honest
-   answer for known gaps: what you have not done, and the nearest real bridge.
+6. **想定質問と回答骨子** — the brief's 「5. 想定質問」 already assembles the question set
+   from the collected records: deep-dives on every submitted highlight, the JD gaps marked
+   「← 橋渡しが必要」, the company messages with `strength: partial`/`none`, questions that
+   were **actually asked before** (`asked[]`, weak/missed first), and the round's standard
+   questions from
+   `.claude/skills/prep-interview/references/question-bank.md` (一般論). Start there,
+   drop what does not apply, add company-specific ones, and write **事実 → 行動 → 結果**
+   skeletons. Every fact comes from `data/career.*.yaml`; no evaluative inflation
+   (主導・全社・大幅). For a gap, the answer is 「やっていません」+ the nearest real bridge —
+   never a manufactured one.
 7. **逆質問（優先順）** — from `interview_probe`s (unsupported messages), the opportunity's
    懸念, and the unanswered 確認チェックリスト. Neutral phrasing for sensitive items
    (存続リスク・オンコール・前任の離任理由) — see vet-opportunity's 面接での聞き方メモ.
 8. **Write** `interviews/<slug>-r<N>.md` using `interviews/example-r1.md` as the format
    reference, link it from `opportunities/<slug>.md` (`[[interviews/<slug>-r<N>]]`), and
    run `python scripts/validate_data.py`.
-9. **After the interview (振り返り)** — fill 振り返り in the same file: what was actually
-   asked, where you stalled, the interviewer's reactions, and the handover to the next
-   round. Update `opportunities/<slug>.md` `status` (`面接中` など) and its 選考ログ, and
-   correct `companies/<slug>/messages.yaml` (要確認 → confirmed) with what you learned.
+9. **After the interview (振り返り)** — **fill `asked[]` in the front-matter**: every
+   question you were actually asked, with `answered: ok / weak / missed` and a short note.
+   This is what closes the loop — `interview_brief.py` re-surfaces `weak`/`missed` as
+   再出題 in the next round of this opportunity **and** in other opportunities' rounds of
+   the same `round_type`, so the same question does not catch you twice. Then write the
+   narrative 振り返り, update `opportunities/<slug>.md` `status` (`面接中` など) and its
+   選考ログ, and correct `companies/<slug>/messages.yaml` / `research.md` (要確認 →
+   confirmed) with what you learned in the room.
+10. **Before the next round** — start from the previous round's `weak`/`missed` questions;
+   they are already at the top of the brief's 想定質問.
 
 ## Rules
 - **No fabrication, in both directions.** Your answers stay inside `data/career.*.yaml`;
@@ -89,5 +101,7 @@ open questions. Nothing new gets invented.
   name in the public template repo (AGENTS.md §6 — personal copies must be private).
 - **Mutual evaluation.** Close every preparation with the decision axis from
   `positioning.md` — what would make you decline this seat?
+- **質問集は蓄積する。** The question bank is 一般論; `asked[]` is your own history. A round
+  without `asked[]` filled in is an unfinished round — the next preparation loses it.
 - **Status vocabulary** (AGENTS.md §6): interviews are `予定 / 完了 / 見送り / キャンセル`;
   keep the opportunity's own status in sync.

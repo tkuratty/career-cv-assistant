@@ -169,8 +169,26 @@ python scripts/interview_brief.py --opportunity <slug> --round 1
 The brief merges, in one page: the round and its interviewers (role + public sources),
 the company research, **what you may claim** from the company's messages
 (`strong` / `partial` / `none`), the highlights on the CV you actually submitted (i.e.
-what gets probed), the opportunity's unanswered checklist, a prioritized 逆質問 list, and
-your own decision axis. Anything missing is reported as 未作成 rather than failing.
+what gets probed), an **auto-generated 想定質問 set**, the opportunity's unanswered
+checklist, a prioritized 逆質問 list, and your own decision axis. Anything missing is
+reported as 未作成 rather than failing.
+
+The 想定質問 set is built from what you have already collected — a deep-dive question per
+submitted highlight, the JD gaps marked 「← 橋渡しが必要」, the company values you *cannot*
+back up (answer 「やっていません」and turn it into a question), the round's standard
+questions from `question-bank.md`, and **questions you were actually asked before**:
+
+```yaml
+# interviews/<slug>-r<N>.md — fill this in after the round
+asked:
+  - q: セキュリティ認証の取得を主導した経験はあるか
+    answered: missed          # ok / weak / missed
+    note: 認証取得の主導経験は無い。日常運用の範囲だと答えるべきだった
+```
+
+`weak` and `missed` come back to the top of the next round's 想定質問 — for the same
+company and for any other company's round of the same type. The same question does not
+catch you twice.
 
 Two more pieces back it up:
 
@@ -179,14 +197,18 @@ Two more pieces back it up:
   what each round type (`casual / first / technical / manager / executive / hr /
   reference / offer`) is for. Explicitly 一般論 — confirm the real process with the
   recruiter.
+- `.claude/skills/prep-interview/references/question-bank.md` — the standard questions
+  (common / per round type / per company type) used as a safety net so nothing obvious
+  is missed.
 - Interviewer research is limited to **public professional information** (role, public
   talks, technical posts), always with sources, never private life or sensitive
   attributes — see AGENTS.md §6.
 
 🇯🇵 面接が決まったら `prep-interview`。業界別・ラウンド別の一般的な進め方（プレイブック）に、
 面接官の公開情報リサーチと、収集済みの企業情報・提出済み CV を束ねた事前ブリーフを組み合わせ、
-`interviews/<slug>-r<N>.md` に想定質問・逆質問・振り返りまで残します。ここでも
-「裏付けの無いことは主張せず逆質問に回す」ルールが効きます。
+`interviews/<slug>-r<N>.md` に想定質問・逆質問・振り返りまで残します。想定質問は収集済み情報から
+**自動生成**され、面接後に `asked[]` へ記録した「実際に聞かれた質問」（weak / missed）が次の
+ラウンドの想定質問に戻ってきます。ここでも「裏付けの無いことは主張せず逆質問に回す」ルールが効きます。
 
 ## Toolchain (PDF / docx)
 
