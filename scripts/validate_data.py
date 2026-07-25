@@ -11,6 +11,10 @@ leaves to agent discipline:
 - skills.yaml: categories carry label.{ja,en}; dict items carry both ja and en.
 - every cv/output/*/selection.yaml (or --selection PATH): referenced position
   and highlight ids exist in career data.
+- every companies/*/messages.yaml: known message types/source kinds, quotes carry
+  a source that exists, evidence highlight ids exist in career data, and the
+  誇張防止ルール — strength must match the number of backing highlights
+  (strong ≥ 2 / partial = 1 / none = 0).
 
 Exit code 0 when everything passes, 1 with a per-problem message otherwise.
 
@@ -27,11 +31,22 @@ from pathlib import Path
 
 import yaml
 
+# Schema for companies/*/messages.yaml lives next to the report tool that
+# consumes it, so the two can never drift apart.
+from company_message_fit import (
+    MESSAGE_TYPES,
+    MIN_EVIDENCE,
+    SOURCE_KINDS,
+    STRENGTHS,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 OUTPUT = ROOT / "cv" / "output"
+COMPANIES = ROOT / "companies"
 
 DATE_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+DAY_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
 
 # Windows consoles often use a legacy codepage that cannot print Japanese.
 for _stream in (sys.stdout, sys.stderr):
@@ -139,6 +154,78 @@ def check_selection(path: Path, positions_by_id: dict[str, dict]) -> None:
                 err(f"{rel}: unknown highlight id '{hid}' (in position '{pid}')")
 
 
+def check_day(value, field: str, where: str) -> None:
+    if value is None:
+        return
+    if not DAY_RE.match(str(value)):
+        err(f"{where}: {field} is '{value}' (expected YYYY-MM-DD)")
+
+
+def check_messages(path: Path, highlight_ids: set[str]) -> None:
+    """companies/<slug>/messages.yaml — schema + the 誇張防止 evidence rule."""
+    doc = load(path)
+    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    check_day(doc.get("updated"), "updated", str(rel))
+
+    source_ids: set[str] = set()
+    for src in doc.get("sources") or []:
+        sid = src.get("id")
+        where = f"{rel} source '{sid}'"
+        if not sid:
+            err(f"{rel}: a source is missing 'id'")
+            continue
+        if sid in source_ids:
+            err(f"{where}: duplicate source id")
+        source_ids.add(sid)
+        if not src.get("url"):
+            err(f"{where}: url is required (出典なしの引用を禁止)")
+        kind = src.get("kind")
+        if kind not in SOURCE_KINDS:
+            err(f"{where}: kind is '{kind}' (expected {'/'.join(sorted(SOURCE_KINDS))})")
+        check_day(src.get("accessed"), "accessed", where)
+
+    seen_ids: set[str] = set()
+    for msg in doc.get("messages") or []:
+        mid = msg.get("id")
+        where = f"{rel} message '{mid}'"
+        if not mid:
+            err(f"{rel}: a message is missing 'id'")
+            continue
+        if mid in seen_ids:
+            err(f"{where}: duplicate message id")
+        seen_ids.add(mid)
+
+        mtype = msg.get("type")
+        if mtype not in MESSAGE_TYPES:
+            err(f"{where}: type is '{mtype}' (expected one of "
+                f"{', '.join(sorted(MESSAGE_TYPES))})")
+
+        if msg.get("quote") and msg.get("source") not in source_ids:
+            err(f"{where}: quote needs a 'source' listed in sources[] "
+                f"(got '{msg.get('source')}')")
+
+        evidence = msg.get("evidence") or []
+        for hid in evidence:
+            if hid not in highlight_ids:
+                err(f"{where}: evidence '{hid}' is not a highlight id in "
+                    "data/career.*.yaml (裏付けは実在する実績のみ)")
+
+        strength = msg.get("strength")
+        if strength not in STRENGTHS:
+            err(f"{where}: strength is '{strength}' (expected "
+                f"{'/'.join(STRENGTHS)})")
+            continue
+        n = len(evidence)
+        if strength == "none":
+            if n:
+                err(f"{where}: strength 'none' but {n} evidence highlight(s) — "
+                    "裏付けがあるなら partial 以上にしてください")
+        elif n < MIN_EVIDENCE[strength]:
+            err(f"{where}: strength '{strength}' needs at least "
+                f"{MIN_EVIDENCE[strength]} evidence highlight(s), got {n} "
+                "(誇張防止: 裏付けの数が主張の上限)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Validate data/ and selection files.")
     ap.add_argument("--selection", type=Path, action="append", default=[],
@@ -154,12 +241,19 @@ def main() -> None:
     for sel_path in selections:
         check_selection(sel_path, positions_by_id)
 
+    highlight_ids = {h.get("id") for pos in positions_by_id.values()
+                     for h in pos.get("highlights", [])}
+    message_files = sorted(COMPANIES.glob("*/messages.yaml"))
+    for msg_path in message_files:
+        check_messages(msg_path, highlight_ids)
+
     if errors:
         for e in errors:
             print(f"  ! {e}", file=sys.stderr)
         sys.exit(f"validate_data: {len(errors)} problem(s) found.")
     print(f"validate_data: OK (career/education/certifications/skills"
-          f" + {len(selections)} selection file(s))")
+          f" + {len(selections)} selection file(s)"
+          f" + {len(message_files)} company message file(s))")
 
 
 if __name__ == "__main__":

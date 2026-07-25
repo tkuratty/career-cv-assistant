@@ -32,11 +32,13 @@ playbook you follow." Use whatever file and web tools you have.
 | `cv/templates/` | Jinja2 Markdown (`*.md.j2`) + Typst PDF (`*.typ`) templates; optional `reference.docx` |
 | `cv/output/<slug>/` | Per-opportunity output (`selection.yaml` + md/pdf/docx). `full/` is the full CV |
 | `companies/<slug>/research.md` | Company research |
+| `companies/<slug>/messages.yaml` | The company's own messaging (MVV / OKR / 行動指針 / 経営・採用メッセージ) with sources, mapped to the user's highlights as evidence |
 | `agents/<slug>.md` | Recruiter / agency registration |
 | `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
 | `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
 | `scripts/validate_data.py` | Machine-check data conventions (ja/en id sync, dates, selection refs) |
-| `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / seen) for dedupe |
+| `scripts/company_message_fit.py` | 企業メッセージ × 本人の実績の整合レポート（誇張の上限を明示） |
+| `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / companies / seen) for dedupe |
 | `scripts/check_pii.py` | Template-only PII guard (run by CI on the upstream repo) |
 | `opportunities/seen.yaml` | Optional log of roles already surfaced/passed on by find-opportunities |
 | `.claude/skills/<name>/SKILL.md` | The workflow playbooks (canonical) |
@@ -52,9 +54,31 @@ Always match the existing file format before editing.
 - **dates**: `YYYY-MM`. Current role: `end: present`.
 - **No fabrication**: never invent companies, dates, roles, or achievements. If unsure, ask.
 - **skills.yaml**: keep the `categories[].label.{ja,en}` + `items` (string or `{ja,en}`) shape.
-- **Verify after editing**: run `python scripts/validate_data.py` after changing `data/`
-  or any `selection.yaml` — it machine-checks id sync, date formats, tags, and selection
-  references, and is the fastest way to catch a convention break.
+- **Verify after editing**: run `python scripts/validate_data.py` after changing `data/`,
+  any `selection.yaml`, or any `companies/*/messages.yaml` — it machine-checks id sync,
+  date formats, tags, selection references and the company-message evidence rules, and
+  is the fastest way to catch a convention break.
+
+### 企業メッセージ（`companies/<slug>/messages.yaml`）
+
+Records what a company says about itself so later steps (応募書類 / 面接設計) can align
+with it **without exaggerating the user**. See `companies/example/messages.yaml`.
+
+- `sources[]`: `id / title / url / accessed (YYYY-MM-DD) / kind (primary|secondary)`.
+  A `quote` without a source in this list is a validation error.
+- `messages[]`: `id / type / label / quote / source / interpretation / signals /
+  evidence / strength` (+ optional `interview_probe`, `note`).
+  - `type` ∈ `mission, vision, value, principle, okr, culture, leader_message,
+    hiring_message`.
+  - `quote` is the company's **verbatim** wording (leave empty rather than paraphrasing);
+    the reading goes in `interpretation`.
+  - `signals` are language-neutral tags matched against `highlights[].tags`.
+  - `evidence` holds **only real highlight ids** from `data/career.*.yaml`.
+- **誇張防止ルール（validator が強制）**: `strength: strong` は evidence 2 件以上、
+  `partial` は 1 件、`none` は 0 件。応募書類・面接で主張してよい強さの上限がこれで決まる
+  — `strong` は断定可、`partial` は限定詞つき、`none` は主張せず `interview_probe`
+  （逆質問）に回す。
+- Report: `python scripts/company_message_fit.py --company <slug> [--lang ja|en] [--all]`.
 
 ## 4. CV generation
 
@@ -87,6 +111,9 @@ Each workflow is a Markdown playbook under `.claude/skills/<name>/SKILL.md`.
 - **vet-opportunity** — 壁打ち analysis of a role/company; writes
   `companies/<slug>/research.md` and `opportunities/<slug>.md`.
 - **vet-agent** — research a recruiter/agency and design the 面談; writes `agents/<slug>.md`.
+- **align-company-message** — collect the company's MVV / OKR / 行動指針 into
+  `companies/<slug>/messages.yaml`, back each with the user's real highlights, and turn
+  that into 応募書類の言い回し and 面接での語り口・逆質問 within the `strength` ceiling.
 
 The `companies/example/`, `opportunities/example.md`, and `agents/example.md` files are
 **format samples** (fictional) that the vet-* skills use as a reference. Users can delete
@@ -104,8 +131,13 @@ them once they have real records.
   - `agents/*.md`: `接触 / 面談予定 / 継続 / 休眠 / 終了`, optionally with a `（…）`
     qualifier, e.g. `継続（条件付き）`
 - **Pipeline overview**: run `python scripts/list_pipeline.py` to get opportunities,
-  agents (`introduced_companies`) and already-seen roles in one shot — use it for
-  dedupe and 重複応募 checks instead of re-reading every record.
+  agents (`introduced_companies`), companies (企業メッセージの収集状況) and already-seen
+  roles in one shot — use it for dedupe and 重複応募 checks instead of re-reading every
+  record.
+- **No exaggeration (binding for 応募書類 and 面接)**: aligning with a company's message
+  means choosing which real facts to lead with and borrowing its vocabulary — never
+  upgrading the user's scope, role or scale. What the user cannot back up becomes a
+  question for the interview, not a claim. See the `strength` rules above.
 - **Privacy / PII policy (binding for every agent)**:
   - The **upstream template repo must contain no PII**. Only the fictional sample
     persona (Taro Yamada / 山田 太郎) may appear in tracked files. Never commit a real

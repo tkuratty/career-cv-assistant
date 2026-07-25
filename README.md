@@ -114,13 +114,46 @@ Codex uses `.codex/prompts/<name>.md` or reads the SKILL.md directly).
 | **tailor-cv** | Turn a JD into a tailored CV (selection + build). |
 | **vet-opportunity** | 壁打ち a role/company; write `companies/` & `opportunities/` records. |
 | **vet-agent** | Research a recruiter and design the 面談; write an `agents/` record. |
+| **align-company-message** | Record a company's MVV / OKR / 行動指針 with sources, back each with your real highlights, and derive 誇張しない wording for documents & interviews. |
 
 `companies/example/`, `opportunities/example.md`, `agents/example.md` are fictional format
 samples the vet-* workflows reference. Delete them once you have real records.
 
-🇯🇵 5つのワークフロー（setup-profile / find-opportunities / tailor-cv / vet-opportunity /
-vet-agent）を用意。Claude はスキルとして自動認識、Codex は `.codex/prompts/` かスキルファイル
-直読みで使えます。
+🇯🇵 6つのワークフロー（setup-profile / find-opportunities / tailor-cv / vet-opportunity /
+vet-agent / align-company-message）を用意。Claude はスキルとして自動認識、Codex は
+`.codex/prompts/` かスキルファイル直読みで使えます。
+
+## Company messages without the exaggeration
+
+Companies tell you what they value — MVV, 行動指針, 全社 OKR, 採用ページのメッセージ.
+Echoing that in a CV or an interview is powerful and also the easiest way to slip into
+overclaiming. This repo makes the line mechanical:
+
+```yaml
+# companies/<slug>/messages.yaml (excerpt)
+- id: msg-okr-security
+  type: okr
+  quote: "今期は情報セキュリティ体制の底上げ（認証取得と権限統制）を全社目標に置いています。"
+  source: src-careers          # must exist in sources[] — no unsourced quotes
+  signals: [security, isms, iam]
+  evidence: [ex-security]      # only real highlight ids from data/career.*.yaml
+  strength: partial            # strong ≥2 evidence / partial 1 / none 0
+  interview_probe: 「認証取得は外部コンサル主導ですか、社内で運用まで持つ想定ですか」
+```
+
+```bash
+python scripts/validate_data.py                    # rejects strength the evidence can't support
+python scripts/company_message_fit.py --company <slug> --lang ja
+```
+
+The report groups every message by how far you may go with it — **strong** = state it as
+fact, **partial** = only with a limiting qualifier, **none** = don't claim it, ask about it
+— lists the highlights that back it, and suggests highlights whose tags match but aren't
+recorded as evidence yet.
+
+🇯🇵 企業の MVV / OKR / 行動指針を出典つきで `companies/<slug>/messages.yaml` に記録し、
+**自分の実績（evidence）の数**で「どこまで言い切ってよいか」を機械的に決めます。裏付けの
+無い項目は書類で主張せず、面接の逆質問に回す — これが誇張を防ぐ仕組みです。
 
 ## Toolchain (PDF / docx)
 

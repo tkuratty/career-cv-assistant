@@ -1,0 +1,114 @@
+# 企業メッセージ（MVV / バリュー / OKR / 行動指針 / 経営メッセージ）の記録
+# — 架空のフォーマット見本です（株式会社サンプルテック）。実データではありません。
+#
+# 目的: 企業が自ら発信している言葉を「出典つき」で構造化し、本人の実績（evidence）で
+#       裏付けられる範囲を明示することで、応募書類・面接で **誇張せずに** 企業の期待へ
+#       さりげなく寄せる。裏付けの数で主張してよい強さ（strength）が決まる。
+#
+# レポート:   python scripts/company_message_fit.py --company example --lang ja
+# 検証:       python scripts/validate_data.py   （evidence の実在・strength の整合を機械チェック）
+#
+# フィールド:
+#   sources[]  : id / title / url / accessed(YYYY-MM-DD) / kind(primary|secondary)
+#   messages[] :
+#     id             一意な識別子
+#     type           mission | vision | value | principle | okr | culture |
+#                    leader_message | hiring_message
+#     label          短い見出し（自分用の呼び名）
+#     quote          企業の原文の短い引用（改変しない。要約は interpretation へ）
+#     source         sources[].id
+#     interpretation この企業が実際に何を期待しているかの読み
+#     signals        言語非依存タグ。career.*.yaml の highlights[].tags と突合する
+#     evidence       裏付けとなる **自分の** highlight id（data/career.*.yaml に実在するもの）
+#     strength       strong（evidence 2 件以上）/ partial（1 件）/ none（0 件）
+#     interview_probe 裏付けが薄い項目を「盛る」代わりに面接で確認する質問
+#     note           任意メモ
+slug: example
+company: 株式会社サンプルテック / SampleTech Inc.
+updated: 2026-01-01
+
+sources:
+  - id: src-mvv
+    title: ミッション・バリュー（コーポレートサイト）
+    url: https://example.com/about/mission
+    accessed: 2026-01-01
+    kind: primary
+  - id: src-careers
+    title: 採用ページ「私たちの働き方と今期の目標」
+    url: https://example.com/careers
+    accessed: 2026-01-01
+    kind: primary
+  - id: src-interview
+    title: CTO インタビュー（技術メディア）
+    url: https://example.com/news/cto-interview
+    accessed: 2026-01-01
+    kind: secondary
+
+messages:
+  - id: msg-mission
+    type: mission
+    label: 現場の手作業をなくす
+    quote: "私たちは現場の手作業をなくし、人が判断に集中できる状態をつくります。"
+    source: src-mvv
+    interpretation: ツール導入そのものではなく、業務プロセスを組み替えて手作業を減らすことを価値と見なす。
+    signals: [automation, workflow, api, erp, requirements]
+    evidence: [ex-automation, ss-erp]
+    strength: strong
+    note: 応募書類の要約は「自動化した」より「手作業を減らす形に業務を組み替えた」に寄せると企業の語彙に合う。
+
+  - id: msg-value-fix-it
+    type: value
+    label: 気づいた人が直す（オーナーシップ）
+    quote: "問題に最初に気づいた人が、担当かどうかにかかわらず直しにいく。"
+    source: src-mvv
+    interpretation: 職務範囲を狭く定義せず、運用の詰まりを自分で拾って仕組みに変える姿勢を重視。
+    signals: [it-operations, helpdesk, itsm, automation]
+    evidence: [ex-helpdesk, ex-automation]
+    strength: strong
+    interview_probe: 「越境して動くことが歓迎される一方、責任範囲や優先順位の線引きは実際どう運用されていますか」
+
+  - id: msg-okr-security
+    type: okr
+    label: FY2026 目標：ISMS 認証取得と SaaS 権限統制の整備
+    quote: "今期は情報セキュリティ体制の底上げ（認証取得と権限統制）を全社目標に置いています。"
+    source: src-careers
+    interpretation: セキュリティは「専任チームの仕事」ではなく、情シスが実務として回すことを期待している。
+    signals: [security, isms, iam, sso]
+    evidence: [ex-security]
+    strength: partial
+    interview_probe: 「認証取得は外部コンサル主導ですか、社内で運用まで持つ想定ですか。情シスの担当範囲を伺いたいです」
+    note: 自分は ISMS の枠組みに沿った「日常運用」の経験であり、認証取得のプロジェクト主導経験ではない。ここは限定して書く。
+
+  - id: msg-principle-write-it-down
+    type: principle
+    label: 決めたことは残す（属人化させない）
+    quote: "口頭で決めたことも、次の人が読める形で残す。"
+    source: src-careers
+    interpretation: 記録・手順化を「後回しの雑務」ではなく行動指針として扱う文化。
+    signals: [itsm, onboarding, helpdesk]
+    evidence: [ex-helpdesk]
+    strength: partial
+    note: 手順の標準化・可視化は実績があるが、全社ドキュメント文化の構築を主導した経験ではない。
+
+  - id: msg-okr-growth
+    type: okr
+    label: FY2026 目標：ARR 2 倍・海外顧客比率 30%
+    quote: "今期は ARR を 2 倍に、海外顧客比率を 30% まで引き上げます。"
+    source: src-careers
+    interpretation: 事業側の成長目標。情シスには急拡大に耐える基盤とオンボーディング速度が求められる可能性。
+    signals: [sales, global, growth]
+    evidence: []
+    strength: none
+    interview_probe: 「急拡大に伴う入社ペースは月あたり何名想定でしょうか。情シスの体制と自動化の優先度はどう置かれていますか」
+
+  - id: msg-leader-ai
+    type: leader_message
+    label: AI 前提で業務を再設計する
+    quote: "AI を後付けのツールではなく、業務設計の前提に置き直しています。"
+    source: src-interview
+    interpretation: AI 活用に前向きだが、二次情報のため実際の承認経路・データ分類の運用は未確認。
+    signals: [ai, llm, governance]
+    evidence: []
+    strength: none
+    interview_probe: 「社内データを扱う際の公認の AI 利用経路（データ分類ごとの可否・承認リードタイム）は整備済みですか」
+    note: 「AI が使えないと動けない」印象を与えないこと。裏付けが無い以上、応募書類では触れない。
