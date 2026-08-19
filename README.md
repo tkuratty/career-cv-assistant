@@ -232,7 +232,16 @@ Optionally place a `cv/templates/reference.docx` to style the docx output
 
 - `*.md` and `selection.yaml` are tracked (per-opportunity history). Generated PDF/docx are
   git-ignored — don't commit them.
-- Company → opportunity → generated CV are linked via front-matter and `[[links]]`.
+- Company → opportunity → generated CV → interview are linked via front-matter and
+  `[[links]]`.
+- `status` vocabularies are fixed in [AGENTS.md](AGENTS.md) §6 (dedupe and
+  `scripts/list_pipeline.py` depend on them). When you close an opportunity, keep the
+  reason **out of** `status` and put it in `outcome` (`未応募` / `不採用` / `辞退`),
+  `closed_reason` and `closed_date` — that is what keeps "walked away" and "was rejected"
+  countable apart.
+- Run `python scripts/validate_data.py` after editing `data/`, `selection.yaml`,
+  `companies/*/messages.yaml`, `interviews/*.md`, `opportunities/*.md` or `agents/*.md`,
+  and `python scripts/list_pipeline.py` for the pipeline overview.
 - Full agent instructions live in [AGENTS.md](AGENTS.md).
 
 ## License

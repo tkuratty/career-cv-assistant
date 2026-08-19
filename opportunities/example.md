@@ -5,6 +5,10 @@ title: コーポレートIT / 情報システム（架空・フォーマット�
 agent: （要確認）
 agent_company: （要確認）
 status: 検討中                     # 検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り
+# 見送りにするときだけ次の3つを埋める（理由を status に括弧書きしない）:
+# outcome: 未応募                  # 未応募 / 不採用 / 辞退
+# closed_reason: 見送りの理由を一行で（経緯は選考ログへ）
+# closed_date: 2026-01-31
 employment: 正社員
 location: 東京都内
 salary: （要確認）
