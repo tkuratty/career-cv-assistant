@@ -5,7 +5,10 @@ Aggregates the front-matter of opportunities/*.md and agents/*.md, plus the
 optional opportunities/seen.yaml (roles already surfaced/passed on by
 find-opportunities), so skills don't have to re-scan every file:
 
-- Opportunities: slug / company / title / status / agent_company / updated
+- Opportunities: slug / company / title / status / outcome / agent_company /
+  updated, plus a one-line tally (応募数 and how those applications ended). A
+  closed record carries outcome 未応募 / 不採用 / 辞退, so 「落とされた」 and
+  「自分で降りた」 stay countable apart (AGENTS.md §6)
 - Agents: slug / agent_company / status / introduced_companies
 - Companies: slug / name / recorded company messages by strength (strong /
   partial / none) — "none" counts messages you cannot back up with your own
@@ -71,13 +74,24 @@ def show(value) -> str:
 
 def main() -> None:
     opp_rows = []
+    applied = rejected = withdrew = live = 0
     for path in sorted((ROOT / "opportunities").glob("*.md")):
         fm = front_matter(path)
         opp_rows.append([show(fm.get(k)) for k in
-                         ("slug", "company", "title", "status", "agent_company", "updated")])
+                         ("slug", "company", "title", "status", "outcome",
+                          "agent_company", "updated")])
+        if fm.get("applied_date"):
+            applied += 1
+        outcome = fm.get("outcome")
+        rejected += outcome == "不採用"
+        withdrew += outcome == "辞退"
+        live += fm.get("status") not in ("見送り", None)
     print("## Opportunities")
-    print(table(opp_rows, ["slug", "company", "title", "status", "agent_company",
-                           "updated"]) if opp_rows else "(none)")
+    print(table(opp_rows, ["slug", "company", "title", "status", "outcome",
+                           "agent_company", "updated"]) if opp_rows else "(none)")
+    if opp_rows:
+        print(f"\n応募 {applied} 件（うち不採用 {rejected} / 辞退 {withdrew}）"
+              f"／進行中 {live} 件／記録 {len(opp_rows)} 件")
 
     agent_rows = []
     for path in sorted((ROOT / "agents").glob("*.md")):

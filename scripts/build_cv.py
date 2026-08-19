@@ -2,7 +2,8 @@
 """Build a CV (Markdown / PDF / docx) from the structured data in data/.
 
 Single source of truth lives in data/*.yaml. An optional selection file picks and
-reorders which positions / highlights to include and can override the summary,
+reorders which positions / highlights to include and can override the summary
+(summary_override) and the closing self-PR (self_pr_override),
 so a CV can be tailored per opportunity without duplicating career data.
 
 Examples
@@ -144,6 +145,8 @@ def build_profile_view(profile: dict) -> dict:
 
 def render_markdown(lang: str, selection: dict) -> str:
     profile = load_yaml(DATA / f"profile.{lang}.yaml")
+    if selection.get("self_pr_override"):
+        profile = {**profile, "self_pr": selection["self_pr_override"]}
     career = load_yaml(DATA / f"career.{lang}.yaml")
     skills = load_yaml(DATA / "skills.yaml")
     education = load_yaml_optional(DATA / f"education.{lang}.yaml")
