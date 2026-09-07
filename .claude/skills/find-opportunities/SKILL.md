@@ -17,7 +17,10 @@ a clean primary link per role, ready to hand to `vet-opportunity`.
    must-checks, and **dealbreakers**. Every include/exclude decision ties back here.
    The salary floor and the commute/remote constraint written there are the two
    filters that cut the most noise — apply them at the source, not at the end.
-2. Run `python scripts/list_pipeline.py` — one-shot view of existing opportunities,
+2. `data/retirement-plan.md` — **if it exists**, its 足切り conditions are hard filters
+   applied *before* ranking: a role that fails one is not a candidate, however well it
+   fits the axis. Its 順位付け conditions are tie-breakers in the scoring step.
+3. Run `python scripts/list_pipeline.py` — one-shot view of existing opportunities,
    agents' `introduced_companies`, and `opportunities/seen.yaml` (roles already
    surfaced/passed on). Use it to **dedupe**: don't re-surface roles already
    introduced, applied to, 見送り, or previously shown in a shortlist.
@@ -194,6 +197,12 @@ filter (use them only on explicit request).
   ```yaml
   seen:
     - { company: 株式会社◯◯, title: 情報システム, url: https://…, date: 2026-01-01, verdict: 見送り }
+    # ⚠️ URL にクエリ文字列（`?`）が入るときは必ずクォートする。`{...}` のフロー形式では
+    # `?` が YAML の予約文字なので、裸で書くと **ファイル全体がパース不能**になる。
+    - { company: 株式会社△△, title: 社内SE, url: "https://example.com/job.phtml?job_code=1", date: 2026-01-01, verdict: 見送り }
   ```
+  Then run `python scripts/validate_data.py` — its `check_seen` verifies the syntax,
+  the required fields and the date format. A broken `seen.yaml` fails silently otherwise:
+  nothing reads it until the next run, which then loses the whole dedupe log.
   Records proper are created by `vet-opportunity` (companies/opportunities) and
   `tailor-cv` (selection/CV).

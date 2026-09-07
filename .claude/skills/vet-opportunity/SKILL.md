@@ -22,7 +22,11 @@ to the user's own positioning — not a sales pitch for the role.
    dealbreakers. **This is the axis for every judgment below.**
 2. `data/career.en.yaml` / `data/career.ja.yaml` and `data/profile.*.yaml` — to
    assess requirement coverage and gaps against real history.
-3. If a `companies/<slug>/research.md` already exists, update it rather than dup.
+3. `data/retirement-plan.md` — **if it exists**, its 足切り conditions are *necessary*
+   conditions. Judge in two stages: the financial 足切り decides whether the role is a
+   candidate at all, then `positioning.md` ranks it. A role failing a 足切り is 見送り
+   however attractive the work is.
+4. If a `companies/<slug>/research.md` already exists, update it rather than dup.
 
 ## Steps
 1. **Company research** — **start with the HERP Career MCP when the company is on HERP**
@@ -112,7 +116,8 @@ to the user's own positioning — not a sales pitch for the role.
 2. **雇用主体**: 契約先法人格 / 退職金の有無 / 社保・DC・福利厚生。
    **健康保険の種類は個別項目として確認する**（組合健保 / 協会けんぽ）。「社会保険完備」の
    記載で済ませない — 保険料率・付加給付・健診や保養の補助で手取りが変わる。自分の足切り
-   基準は `data/positioning.md` の Must-check に書いておき、案件ごとにそこへ照らす。
+   基準は `data/positioning.md` の Must-check（財務の軸を使っているなら
+   `data/retirement-plan.md` の条件も）に書いておき、案件ごとに 1 項目ずつそこへ照らす。
 3. **拠点・機能の存続リスク**: 集約・オフショア計画 / アウトソース置換 / redundancy 条件。
 4. **ポジションの実態**: JD 記載の裏取り / オンコール頻度 / 少人数のカバー体制。
 5. **成長ストーリー**: 昇格の器 / 歴代在籍年数・離任理由 / 評価の裁量。

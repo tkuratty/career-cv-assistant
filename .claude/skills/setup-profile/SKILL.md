@@ -64,11 +64,22 @@ sample persona** (Taro Yamada / 山田 太郎) in `data/` with the user's real d
    Fill the `〈…〉` placeholders (salary floor, etc.). The principles are generic and
    can stay; personalize the numbers and any examples.
 
-8. **Reset the example records (optional).** `companies/example/`, `opportunities/example.md`
+8. **Retirement / financial constraints (optional)** → `data/retirement-plan.md`
+   Ask whether the user wants a financial 足切り axis alongside positioning. If yes,
+   interview for the **structure only** — target retirement age, household composition,
+   whether a mortgage runs past retirement — and turn it into the file's 足切り (binary)
+   and 順位付け (tie-breaker) conditions.
+   ⚠️ **Never write the amounts into the repo.** Assets, loan balances, living costs and
+   pension estimates stay outside it; the file records only the resulting conditions
+   (e.g. 「年収 〇〇〇万を下回らない」) and why they are where they are. If the user
+   doesn't want this axis, tell them to delete the file — nothing breaks without it.
+
+9. **Reset the example records (optional).** `companies/example/`, `opportunities/example.md`
    and `agents/example.md` are format samples the other skills reference. Leave them,
    or tell the user they can delete them once they have real records.
+   `opportunities/seen.yaml` ships empty and is filled by find-opportunities.
 
-9. **Build the first CV.**
+10. **Build the first CV.**
    ```
    python scripts/build_cv.py --lang ja --formats md
    python scripts/build_cv.py --lang en --formats md

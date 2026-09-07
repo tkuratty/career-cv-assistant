@@ -23,6 +23,7 @@ leaves to agent discipline:
   the AGENTS.md vocabulary with no reason smuggled into it, dates are YYYY-MM-DD,
   and a closed opportunity carries outcome (未応募 / 不採用 / 辞退) + closed_reason
   — so 「自分で降りた」 and 「落とされた」 stay countable apart.
+- opportunities/seen.yaml (when present): valid YAML with the required fields.
 
 Exit code 0 when everything passes, 1 with a per-problem message otherwise.
 
@@ -382,6 +383,46 @@ def check_agent(path: Path) -> None:
             f"{' / '.join(AGENT_STATUSES)}, optionally with a （…） qualifier)")
 
 
+def check_seen(path: Path) -> bool:
+    """opportunities/seen.yaml — the find-opportunities dedupe log.
+
+    Nothing else reads this file at runtime, so a YAML syntax error here stays
+    invisible until a later run tries to parse it. The trap in practice is a URL
+    containing `?` written unquoted inside a `{...}` flow mapping — YAML treats
+    `?` as a complex-key indicator and the whole document stops parsing.
+    """
+    if not path.is_file():
+        return False
+    rel = path.relative_to(ROOT).as_posix()
+    try:
+        doc = load(path)
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        where = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
+        err(f"{rel}: not valid YAML{where}. "
+            f"A URL containing '?' must be quoted inside a {{...}} entry")
+        return True
+
+    entries = doc.get("seen")
+    if entries is None:
+        err(f"{rel}: top-level 'seen' key is missing")
+        return True
+    if not isinstance(entries, list):
+        err(f"{rel}: 'seen' must be a list")
+        return True
+
+    for i, entry in enumerate(entries, start=1):
+        where = f"{rel}[{i}]"
+        if not isinstance(entry, dict):
+            err(f"{where}: expected a mapping, got {type(entry).__name__}")
+            continue
+        for field in ("company", "title", "url", "date", "verdict"):
+            if not entry.get(field):
+                err(f"{where}: {field} is required")
+        check_day(entry.get("date"), "date", where)
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Validate data/ and selection files.")
     ap.add_argument("--selection", type=Path, action="append", default=[],
@@ -415,6 +456,8 @@ def main() -> None:
     for agent_path in agent_files:
         check_agent(agent_path)
 
+    seen_checked = check_seen(OPPORTUNITIES / "seen.yaml")
+
     if errors:
         for e in errors:
             print(f"  ! {e}", file=sys.stderr)
@@ -423,7 +466,8 @@ def main() -> None:
           f" + {len(selections)} selection file(s)"
           f" + {len(message_files)} company message file(s)"
           f" + {len(interview_files)} interview record(s)"
-          f" + {len(opp_files)} opportunity + {len(agent_files)} agent record(s))")
+          f" + {len(opp_files)} opportunity + {len(agent_files)} agent record(s)"
+          f"{' + seen.yaml' if seen_checked else ''})")
 
 
 if __name__ == "__main__":

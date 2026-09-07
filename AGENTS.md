@@ -28,7 +28,7 @@ playbook you follow." Use whatever file and web tools you have.
 
 | Path | Role |
 | --- | --- |
-| `data/` | Single source: `profile.{ja,en}.yaml` / `career.{ja,en}.yaml` / `skills.yaml` / `education.{ja,en}.yaml` / `certifications.{ja,en}.yaml` / `positioning.md` (career axis) / `agent-policy.md` (how to deal with recruiters) |
+| `data/` | Single source: `profile.{ja,en}.yaml` / `career.{ja,en}.yaml` / `skills.yaml` / `education.{ja,en}.yaml` / `certifications.{ja,en}.yaml` / `positioning.md` (career axis) / `agent-policy.md` (how to deal with recruiters) / `retirement-plan.md` (optional 財務の足切り条件 — structure and verdicts only, never the amounts) |
 | `cv/templates/` | Jinja2 Markdown (`*.md.j2`) + Typst PDF (`*.typ`) templates; optional `reference.docx` |
 | `cv/output/<slug>/` | Per-opportunity output (`selection.yaml` + md/pdf/docx). `full/` is the full CV |
 | `companies/<slug>/research.md` | Company research |
@@ -59,8 +59,9 @@ Always match the existing file format before editing.
 - **Verify after editing**: run `python scripts/validate_data.py` after changing `data/`,
   any `selection.yaml`, `companies/*/messages.yaml`, `interviews/*.md`,
   `opportunities/*.md` or `agents/*.md` — it machine-checks id sync, date formats, tags,
-  selection references, the company-message evidence rules and the pipeline
-  front-matter, and is the fastest way to catch a convention break.
+  selection references, the company-message evidence rules, the pipeline front-matter and
+  the syntax of `opportunities/seen.yaml`, and is the fastest way to catch a convention
+  break.
 
 ### 企業メッセージ（`companies/<slug>/messages.yaml`）
 
@@ -99,6 +100,25 @@ python scripts/build_cv.py --lang ja --selection cv/output/<slug>/selection.yaml
 `--formats` defaults to `md`; pass `pdf`/`docx` explicitly. If `pandoc`/`typst` are
 missing, those formats exit with an install hint (README).
 
+Shape of `selection.yaml` (every key optional — omit it and the full CV in default
+order is produced from `profile`'s own `summary` / `self_pr`):
+
+```yaml
+name: acme-senior
+summary_override: |
+  この案件向けに調整した職務要約…
+self_pr_override: |
+  この案件向けに調整した自己PR…（日本語テンプレートの「自己PR」セクションを差し替える）
+positions:
+  - id: acme-senior-eng
+    highlights: [acme-cost-reduction, acme-team-lead]   # 省略時は全 highlight
+  - id: globex-backend
+```
+
+`summary_override` / `self_pr_override` **rewrite wording, never facts** — they pick
+which real achievements to lead with and borrow the company's vocabulary. Upgrading
+scope, role or scale there is the exaggeration the 誇張防止ルール forbids.
+
 ## 5. Workflows (prefer these over ad-hoc work)
 
 Each workflow is a Markdown playbook under `.claude/skills/<name>/SKILL.md`.
@@ -107,11 +127,15 @@ Each workflow is a Markdown playbook under `.claude/skills/<name>/SKILL.md`.
 
 - **setup-profile** — first-run personalization. Interview the user and replace the
   sample data in `data/` with their own. **Run this first after cloning.**
-- **find-opportunities** — source new roles against `positioning.md` (job boards; LinkedIn
-  only if a LinkedIn tool is connected) and return a ranked shortlist. Top of the funnel.
+- **find-opportunities** — source new roles against `positioning.md` (job boards, ATS
+  `site:` searches, English-language JP boards; a job-search MCP or LinkedIn only if one
+  is connected) and return a ranked shortlist. Top of the funnel. If
+  `data/retirement-plan.md` exists, its 足切り conditions filter the list before
+  `positioning.md` ranks it.
 - **tailor-cv** — given a JD or `opportunities/<slug>.md`, pick/reorder highlights into a
   `selection.yaml` and build the CV.
-- **vet-opportunity** — 壁打ち analysis of a role/company; writes
+- **vet-opportunity** — 壁打ち analysis of a role/company; confirms the posting is still
+  live and which window actually accepts an application; writes
   `companies/<slug>/research.md` and `opportunities/<slug>.md`.
 - **vet-agent** — research a recruiter/agency and design the 面談; writes `agents/<slug>.md`.
 - **prep-interview** — prepare a scheduled interview round: pre-interview brief, the

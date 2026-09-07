@@ -33,7 +33,8 @@ career highlights — never by inventing new facts.
    `strong`/`partial` message when two candidates are otherwise equal. If the file
    does not exist and the user wants this alignment, run **align-company-message**.
 4. **Draft a summary**: write a `summary_override` (1–3 sentences) aimed at this
-   role, using only facts already present in the data. You may borrow the company's
+   role, and — for `ja` — optionally a `self_pr_override` replacing the profile's
+   default 自己PR, using only facts already present in the data. You may borrow the company's
    **vocabulary** from messages with `strength: strong` (assertive) or `partial`
    (only with a limiting qualifier — 「小規模ながら」「〜の範囲で」). Never write
    toward a message with `strength: none`, and never add evaluative words
@@ -44,6 +45,9 @@ career highlights — never by inventing new facts.
    lang: ja                       # informational; pass --lang to the script
    summary_override: |
      決済基盤のテックリードとして…（この案件向けに調整）
+   self_pr_override: |
+     …（任意。ja テンプレートの「自己PR」セクションを差し替える。
+     省略すると data/profile.ja.yaml の self_pr がそのまま出る）
    positions:
      - id: acme-senior-eng
        highlights: [acme-cost-reduction, acme-team-lead]   # subset + order
@@ -62,6 +66,25 @@ career highlights — never by inventing new facts.
 7. **Report**: show which highlights were chosen and why they fit the JD, and
    list the generated files under `cv/output/<slug>/`.
 
+## 任意の派生成果物（求められたときだけ）
+
+Some applications need prose the CV doesn't hold. Write these next to the CV in
+`cv/output/<slug>/` so they stay tied to the version of the CV that was submitted.
+
+- **`motivation.ja.md` — 志望動機・自由記述.** Open the file with a note recording
+  **which vocabulary you borrowed and which you did not**: only messages the
+  `company_message_fit` report marks `strong` may be echoed assertively, `partial`
+  needs a limiting qualifier, and a `strength: none` message must be named as
+  deliberately *not* echoed. Making that ceiling visible inside the deliverable is what
+  stops the next edit from quietly crossing it. Offer a couple of lengths if the form's
+  character limit is unknown.
+- **`application-form.md` — 応募フォームの回答案.** Mirror the form's actual fields as a
+  table, filled from `data/` where the repo holds the answer. Mark every field the repo
+  cannot answer — 生年月日, 住所, and anything requiring the user's judgment — with a
+  **⚠️ 本人記入** marker instead of guessing. State the application window at the top,
+  and state plainly that the draft is **未送信 and that the user sends it**. Never
+  submit a form on the user's behalf.
+
 ## Rules
 - **No fabrication.** Only use positions/highlights/skills that exist in `data/`.
   If the JD needs something not in the data, tell the user — do not invent it.
@@ -73,5 +96,8 @@ career highlights — never by inventing new facts.
   `companies/<slug>/messages.yaml` is the limit; when in doubt, understate.
 - If the user gives an `opportunities/<slug>.md` file, read its front-matter
   (`company`, `jd_url`, etc.) and set the `cv:` field there to the output dir.
+  `validate_data.py` checks that the `cv:` path actually exists.
+- **Never apply on the user's behalf.** This skill produces documents; submitting them
+  is the user's action.
 - If `pandoc`/`typst` are missing, still write the `.md` and selection.yaml and
   tell the user how to install the toolchain (see README.md).
