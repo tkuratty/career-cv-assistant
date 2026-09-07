@@ -1,0 +1,18 @@
+# 提示済み・見送りにした求人のログ（find-opportunities が追記する）。
+#
+# 目的は重複提示の抑止。ここに載っている求人は、次回以降のショートリストに
+# 再掲しない。正式なレコード（companies / opportunities）は vet-opportunity が、
+# CV は tailor-cv が作る — このファイルは「もう見た」という事実だけを持つ。
+#
+# フィールド（すべて必須）: company / title / url / date (YYYY-MM-DD) / verdict
+#
+# ⚠️ URL にクエリ文字列（`?`）が入るときは必ずクォートする。`{...}` のフロー形式では
+#    `?` が YAML の予約文字なので、裸で書くと **ファイル全体がパース不能**になる。
+#    追記したら `python scripts/validate_data.py` を実行して構文を確かめること。
+#
+# 記入例:
+#   seen:
+#     - { company: 株式会社サンプルテック, title: 情報システム, url: https://example.com/careers/1, date: 2026-01-01, verdict: 見送り }
+#     - { company: 株式会社サンプル商事, title: 社内SE, url: "https://example.com/job.phtml?job_code=1", date: 2026-01-01, verdict: 提示のみ }
+
+seen: []

@@ -19,6 +19,11 @@ leaves to agent discipline:
   is an integer, round_type and status use the known vocabulary, date is
   YYYY-MM-DD, and each asked[] entry carries a question plus an answered value
   (ok / weak / missed).
+- every opportunities/*.md and agents/*.md: slug matches the filename, status uses
+  the AGENTS.md vocabulary with no reason smuggled into it, dates are YYYY-MM-DD,
+  and a closed opportunity carries outcome (未応募 / 不採用 / 辞退) + closed_reason
+  — so 「自分で降りた」 and 「落とされた」 stay countable apart.
+- opportunities/seen.yaml (when present): valid YAML with the required fields.
 
 Exit code 0 when everything passes, 1 with a per-problem message otherwise.
 
@@ -49,6 +54,18 @@ DATA = ROOT / "data"
 OUTPUT = ROOT / "cv" / "output"
 COMPANIES = ROOT / "companies"
 INTERVIEWS = ROOT / "interviews"
+OPPORTUNITIES = ROOT / "opportunities"
+AGENTS = ROOT / "agents"
+
+# Pipeline vocabularies (AGENTS.md §6). scripts/list_pipeline.py reads the same
+# front-matter, so a new value invented here silently breaks the dedupe view.
+OPPORTUNITY_STATUSES = ("検討中", "応募前", "書類選考中", "面接中", "内定", "見送り")
+# How a closed opportunity ended. 未応募 = dropped before applying, 不採用 = the
+# company rejected, 辞退 = withdrew after applying. Kept out of `status` so the
+# post-application 歩留まり (不採用 / applied) can be counted.
+OUTCOMES = ("未応募", "不採用", "辞退")
+AGENT_STATUSES = ("接触", "面談予定", "継続", "休眠", "終了")
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 # Interview rounds (interviews/*.md). Shared with the prep-interview playbook.
 ROUND_TYPES = {"casual", "first", "technical", "manager", "executive", "hr",
@@ -239,21 +256,28 @@ def check_messages(path: Path, highlight_ids: set[str]) -> None:
                 "(誇張防止: 裏付けの数が主張の上限)")
 
 
-def check_interview(path: Path) -> None:
-    """interviews/<slug>-r<N>.md — front-matter sanity and record links."""
+def front_matter(path: Path) -> tuple[dict | None, str]:
+    """Read a record's YAML front-matter. Returns (None, rel) if unusable."""
     text = path.read_text(encoding="utf-8")
-    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    rel = str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path)
     if not text.startswith("---"):
         err(f"{rel}: missing front-matter")
-        return
+        return None, rel
     end = text.find("\n---", 3)
     if end == -1:
         err(f"{rel}: unterminated front-matter")
-        return
+        return None, rel
     try:
-        fm = yaml.safe_load(text[3:end]) or {}
+        return (yaml.safe_load(text[3:end]) or {}), rel
     except yaml.YAMLError as exc:
         err(f"{rel}: bad front-matter ({exc})")
+        return None, rel
+
+
+def check_interview(path: Path) -> None:
+    """interviews/<slug>-r<N>.md — front-matter sanity and record links."""
+    fm, rel = front_matter(path)
+    if fm is None:
         return
 
     opportunity = fm.get("opportunity")
@@ -292,6 +316,113 @@ def check_interview(path: Path) -> None:
                 f"{' / '.join(ANSWERED_VALUES)})")
 
 
+def check_opportunity(path: Path) -> None:
+    """opportunities/<slug>.md — front-matter vocabulary and closure bookkeeping."""
+    fm, rel = front_matter(path)
+    if fm is None:
+        return
+
+    if fm.get("slug") != path.stem:
+        err(f"{rel}: slug is '{fm.get('slug')}' but the filename says '{path.stem}'")
+
+    company = str(fm.get("company") or "")
+    if SLUG_RE.match(company) and not (COMPANIES / company).is_dir():
+        err(f"{rel}: company '{company}' has no companies/{company}/ directory")
+
+    for field in ("applied_date", "closed_date", "updated"):
+        check_day(fm.get(field), field, rel)
+    if not fm.get("updated"):
+        err(f"{rel}: updated is required")
+
+    status = fm.get("status")
+    if status not in OPPORTUNITY_STATUSES:
+        hint = ""
+        if isinstance(status, str) and "（" in status:
+            hint = " — 理由は status ではなく outcome / closed_reason に書く"
+        err(f"{rel}: status is '{status}' (expected one of "
+            f"{' / '.join(OPPORTUNITY_STATUSES)}){hint}")
+        return
+
+    outcome = fm.get("outcome")
+    if status == "見送り":
+        if outcome not in OUTCOMES:
+            err(f"{rel}: closed opportunity needs outcome "
+                f"({' / '.join(OUTCOMES)}), got '{outcome}'")
+        if not fm.get("closed_reason"):
+            err(f"{rel}: closed opportunity needs a one-line closed_reason")
+        if outcome in ("不採用", "辞退") and not fm.get("applied_date"):
+            err(f"{rel}: outcome '{outcome}' but applied_date is empty "
+                "(応募していない案件は 未応募)")
+    elif outcome:
+        err(f"{rel}: outcome '{outcome}' on a live opportunity "
+            f"(status: {status}) — outcome は status: 見送り のときだけ")
+
+    cv = fm.get("cv")
+    if cv and not (ROOT / str(cv).split("#")[0].strip()).exists():
+        err(f"{rel}: cv path '{cv}' does not exist")
+
+
+def check_agent(path: Path) -> None:
+    """agents/<slug>.md — front-matter vocabulary. `（…）` qualifiers are allowed."""
+    fm, rel = front_matter(path)
+    if fm is None:
+        return
+
+    if fm.get("slug") != path.stem:
+        err(f"{rel}: slug is '{fm.get('slug')}' but the filename says '{path.stem}'")
+
+    for field in ("first_contact", "last_meeting", "updated"):
+        check_day(fm.get(field), field, rel)
+    if not fm.get("updated"):
+        err(f"{rel}: updated is required")
+
+    status = str(fm.get("status") or "")
+    base = status.split("（")[0]
+    if base not in AGENT_STATUSES:
+        err(f"{rel}: status is '{status}' (expected one of "
+            f"{' / '.join(AGENT_STATUSES)}, optionally with a （…） qualifier)")
+
+
+def check_seen(path: Path) -> bool:
+    """opportunities/seen.yaml — the find-opportunities dedupe log.
+
+    Nothing else reads this file at runtime, so a YAML syntax error here stays
+    invisible until a later run tries to parse it. The trap in practice is a URL
+    containing `?` written unquoted inside a `{...}` flow mapping — YAML treats
+    `?` as a complex-key indicator and the whole document stops parsing.
+    """
+    if not path.is_file():
+        return False
+    rel = path.relative_to(ROOT).as_posix()
+    try:
+        doc = load(path)
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        where = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
+        err(f"{rel}: not valid YAML{where}. "
+            f"A URL containing '?' must be quoted inside a {{...}} entry")
+        return True
+
+    entries = doc.get("seen")
+    if entries is None:
+        err(f"{rel}: top-level 'seen' key is missing")
+        return True
+    if not isinstance(entries, list):
+        err(f"{rel}: 'seen' must be a list")
+        return True
+
+    for i, entry in enumerate(entries, start=1):
+        where = f"{rel}[{i}]"
+        if not isinstance(entry, dict):
+            err(f"{where}: expected a mapping, got {type(entry).__name__}")
+            continue
+        for field in ("company", "title", "url", "date", "verdict"):
+            if not entry.get(field):
+                err(f"{where}: {field} is required")
+        check_day(entry.get("date"), "date", where)
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Validate data/ and selection files.")
     ap.add_argument("--selection", type=Path, action="append", default=[],
@@ -317,6 +448,16 @@ def main() -> None:
     for iv_path in interview_files:
         check_interview(iv_path)
 
+    opp_files = sorted(OPPORTUNITIES.glob("*.md")) if OPPORTUNITIES.is_dir() else []
+    for opp_path in opp_files:
+        check_opportunity(opp_path)
+
+    agent_files = sorted(AGENTS.glob("*.md")) if AGENTS.is_dir() else []
+    for agent_path in agent_files:
+        check_agent(agent_path)
+
+    seen_checked = check_seen(OPPORTUNITIES / "seen.yaml")
+
     if errors:
         for e in errors:
             print(f"  ! {e}", file=sys.stderr)
@@ -324,7 +465,9 @@ def main() -> None:
     print(f"validate_data: OK (career/education/certifications/skills"
           f" + {len(selections)} selection file(s)"
           f" + {len(message_files)} company message file(s)"
-          f" + {len(interview_files)} interview record(s))")
+          f" + {len(interview_files)} interview record(s)"
+          f" + {len(opp_files)} opportunity + {len(agent_files)} agent record(s)"
+          f"{' + seen.yaml' if seen_checked else ''})")
 
 
 if __name__ == "__main__":

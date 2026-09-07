@@ -71,7 +71,9 @@ Edit the files in `data/` directly, replacing the sample persona. Keep the forma
 the **same `id`s** across the `ja`/`en` files. The relevant files:
 `profile.{ja,en}.yaml`, `career.{ja,en}.yaml`, `skills.yaml`,
 `education.{ja,en}.yaml`, `certifications.{ja,en}.yaml`, plus
-`positioning.md` (your career axis) and `agent-policy.md` (how you deal with recruiters).
+`positioning.md` (your career axis) and `agent-policy.md` (how you deal with recruiters),
+plus the optional `retirement-plan.md` (financial cut-off conditions — write the verdicts,
+never the amounts; delete the file if you don't want that axis).
 
 🇯🇵 パーソナライズは2通り：**(A)** Claude Code / Codex に `setup-profile` を実行させて対話で
 埋める、**(B)** `data/` を手で編集する。どちらも ja/en の `id` を揃えるのがコツです。
@@ -94,6 +96,8 @@ python scripts/build_cv.py --lang ja \
 name: acme-corporate-it
 summary_override: |            # optional; falls back to profile summary
   Tailored summary for this role…
+self_pr_override: |            # optional; falls back to profile self_pr (ja only)
+  Tailored 自己PR for this role…
 positions:                     # optional; omit to include everything in file order
   - id: example-inc-2021
     highlights: [ex-security, ex-automation]   # optional subset + order
@@ -110,9 +114,9 @@ Codex uses `.codex/prompts/<name>.md` or reads the SKILL.md directly).
 | Workflow | What it does |
 | --- | --- |
 | **setup-profile** | First-run: interview you and replace the sample data in `data/`. |
-| **find-opportunities** | Source roles matching `positioning.md`; return a ranked shortlist. |
+| **find-opportunities** | Source roles matching `positioning.md` across layered sources (role boards, ATS `site:` searches, English-language JP boards); return a ranked shortlist. |
 | **tailor-cv** | Turn a JD into a tailored CV (selection + build). |
-| **vet-opportunity** | 壁打ち a role/company; write `companies/` & `opportunities/` records. |
+| **vet-opportunity** | 壁打ち a role/company, confirm the posting is live and how to apply; write `companies/` & `opportunities/` records. |
 | **vet-agent** | Research a recruiter and design the 面談; write an `agents/` record. |
 | **align-company-message** | Record a company's MVV / OKR / 行動指針 with sources, back each with your real highlights, and derive 誇張しない wording for documents & interviews. |
 | **prep-interview** | Prepare a scheduled interview round: brief, industry/round playbook, interviewer research (public info only), answer skeletons, 逆質問, 振り返り. |
@@ -233,6 +237,16 @@ Optionally place a `cv/templates/reference.docx` to style the docx output
 - `*.md` and `selection.yaml` are tracked (per-opportunity history). Generated PDF/docx are
   git-ignored — don't commit them.
 - Company → opportunity → generated CV are linked via front-matter and `[[links]]`.
+- An opportunity's `status` never carries its reason. When one closes, `status: 見送り`
+  plus `outcome` (`未応募` = dropped before applying / `不採用` = rejected / `辞退` =
+  withdrew after applying) and a one-line `closed_reason` — so `list_pipeline.py` can
+  count the post-application hit rate.
+- `jd_url` points at the window that actually accepts an application, not the job board's
+  listing.
+- `python scripts/validate_data.py` machine-checks all of the above (plus ja/en id sync,
+  dates, selection references, company-message evidence and `opportunities/seen.yaml`).
+  Run it after editing anything under `data/`, `companies/`, `opportunities/`, `agents/`
+  or `interviews/`.
 - Full agent instructions live in [AGENTS.md](AGENTS.md).
 
 ## License
