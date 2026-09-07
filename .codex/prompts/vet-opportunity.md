@@ -8,5 +8,9 @@ and record both sides when sources disagree. If the role ends up 見送り, keep
 out of `status`: fill `outcome` (未応募 / 不採用 / 辞退), `closed_reason` and
 `closed_date`. Then run `python scripts/validate_data.py`.
 
+Tooling note: the SKILL's step 1 starts from a **HERP Career MCP** (`get_company` gives
+funding history / number-of-employees history / directors). Use it only if that tool is
+connected on your side; otherwise research from the open web and mark the gaps 要確認.
+
 案件 / JD:
 $ARGUMENTS

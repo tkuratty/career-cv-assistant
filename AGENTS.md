@@ -37,10 +37,10 @@ playbook you follow." Use whatever file and web tools you have.
 | `opportunities/<slug>.md` | A job opportunity (front-matter links to company & generated CV) |
 | `interviews/<slug>-r<N>.md` | One interview round: 目的・面接官（公開情報のみ）・語り口・想定質問・逆質問・振り返り。`asked[]` に実際に聞かれた質問を残すと次ラウンドの想定質問に戻る |
 | `scripts/build_cv.py` | data + selection + template → md/pdf/docx |
-| `scripts/validate_data.py` | Machine-check data conventions (ja/en id sync, dates, selection refs) |
+| `scripts/validate_data.py` | Machine-check the conventions (ja/en id sync, dates, selection refs, company messages, and interview / opportunity / agent front-matter) |
 | `scripts/company_message_fit.py` | 企業メッセージ × 本人の実績の整合レポート（誇張の上限を明示） |
 | `scripts/interview_brief.py` | 面接前ブリーフ（企業調査 + 企業メッセージ + 提出 CV + 案件の懸念 + **想定質問の自動生成**） |
-| `scripts/list_pipeline.py` | One-command pipeline overview (opportunities / agents / companies / seen) for dedupe |
+| `scripts/list_pipeline.py` | One-command pipeline overview (opportunities with `outcome` + an applied/rejected/withdrew tally, agents, companies, interviews, seen) for dedupe |
 | `scripts/check_pii.py` | Template-only PII guard (run by CI on the upstream repo) |
 | `opportunities/seen.yaml` | Optional log of roles already surfaced/passed on by find-opportunities |
 | `.claude/skills/<name>/SKILL.md` | The workflow playbooks (canonical) |
@@ -57,11 +57,11 @@ Always match the existing file format before editing.
 - **No fabrication**: never invent companies, dates, roles, or achievements. If unsure, ask.
 - **skills.yaml**: keep the `categories[].label.{ja,en}` + `items` (string or `{ja,en}`) shape.
 - **Verify after editing**: run `python scripts/validate_data.py` after changing `data/`,
-  any `selection.yaml`, or any record under `companies/`, `opportunities/`, `agents/` or
-  `interviews/` — it machine-checks id sync, date formats, tags, selection references,
-  the company-message evidence rules, the status vocabularies below, the closure
-  bookkeeping of a 見送り opportunity, and the syntax of `opportunities/seen.yaml`. It is
-  the fastest way to catch a convention break.
+  any `selection.yaml`, `companies/*/messages.yaml`, `interviews/*.md`,
+  `opportunities/*.md` or `agents/*.md` — it machine-checks id sync, date formats, tags,
+  selection references, the company-message evidence rules, the pipeline front-matter and
+  the syntax of `opportunities/seen.yaml`, and is the fastest way to catch a convention
+  break.
 
 ### 企業メッセージ（`companies/<slug>/messages.yaml`）
 
@@ -160,36 +160,34 @@ them once they have real records.
 - **Status vocabulary** (front-matter `status`; don't invent new values — dedupe and
   `scripts/list_pipeline.py` rely on them):
   - `opportunities/*.md`: `検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り`.
-    **Never put the reason inside `status`** — `見送り（書類選考落ち）` is a validation
-    error. A closed opportunity splits into three fields instead:
-    - `outcome`: **`未応募`** (dropped before applying) / **`不採用`** (the company
-      rejected) / **`辞退`** (withdrew after applying). Required when
-      `status: 見送り`, and must be empty otherwise.
-    - `closed_reason`: one line. The narrative goes in the record's 選考ログ.
-    - `closed_date`: when it ended (`YYYY-MM-DD`, optional).
-    The point of the split is to keep 「自分で降りた」 and 「落とされた」 countable
-    apart: `scripts/list_pipeline.py` reports the post-application 歩留まり
-    (`不採用` / applications), which a reason smuggled into `status` makes uncountable.
+    **Never smuggle the reason into `status`** (`見送り（書類選考落ち）` is a validation
+    error). A closed opportunity is described by three separate fields:
+    - `outcome`: `未応募` (dropped before applying) / `不採用` (the company rejected) /
+      `辞退` (withdrew after applying). Required when `status: 見送り`, empty otherwise.
+    - `closed_reason`: one line. The story goes in the 選考ログ section.
+    - `closed_date`: `YYYY-MM-DD`, optional.
+    The split keeps 「walked away」 and 「was rejected」 countable apart, so the
+    post-application hit rate stays visible; a reason inside `status` makes it uncountable.
   - `agents/*.md`: `接触 / 面談予定 / 継続 / 休眠 / 終了`, optionally with a `（…）`
     qualifier, e.g. `継続（条件付き）`
   - `interviews/*.md`: `予定 / 完了 / 見送り / キャンセル`, with
     `round_type` ∈ `casual / first / technical / manager / executive / hr /
     reference / offer` (validated by `scripts/validate_data.py`)
-- **`jd_url` points at the primary window**: record the page that actually **accepts an
-  application** (the company's own careers page / the ATS form), not the job board's
-  listing; keep the board link as a comment. A board's "last updated" is the day the
-  posting's text was edited, which says nothing about whether the role is still open —
-  confirm the posting is live and the application route before deciding to apply
-  (procedure in vet-opportunity).
 - **想定質問は蓄積する**: after every round, record what was actually asked in the
   interview record's `asked[]` (`q` + `answered: ok / weak / missed` + note).
   `scripts/interview_brief.py` re-surfaces `weak`/`missed` as 再出題 in later rounds of
   the same opportunity **and** in other opportunities' rounds of the same `round_type`.
   A round whose `asked[]` is empty loses that knowledge for good.
+- **`jd_url` points at the primary application route** — the company's careers page or
+  the ATS form the user can actually apply through, not the board listing (keep that as a
+  comment). A board's "last updated" is the day the posting text was edited, not proof
+  that the opening is alive; confirm freshness and the route before applying
+  (`vet-opportunity` step 2).
 - **Pipeline overview**: run `python scripts/list_pipeline.py` to get opportunities
-  (with `outcome` and the 応募 tally), agents (`introduced_companies`), companies
-  (企業メッセージの収集状況), interviews and already-seen roles in one shot — use it for
-  dedupe and 重複応募 checks instead of re-reading every record.
+  (with `outcome` and an applied/rejected/withdrew tally), agents
+  (`introduced_companies`), companies (企業メッセージの収集状況), interviews and
+  already-seen roles in one shot — use it for dedupe and 重複応募 checks instead of
+  re-reading every record.
 - **No exaggeration (binding for 応募書類 and 面接)**: aligning with a company's message
   means choosing which real facts to lead with and borrowing its vocabulary — never
   upgrading the user's scope, role or scale. What the user cannot back up becomes a

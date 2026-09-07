@@ -236,17 +236,17 @@ Optionally place a `cv/templates/reference.docx` to style the docx output
 
 - `*.md` and `selection.yaml` are tracked (per-opportunity history). Generated PDF/docx are
   git-ignored — don't commit them.
-- Company → opportunity → generated CV are linked via front-matter and `[[links]]`.
-- An opportunity's `status` never carries its reason. When one closes, `status: 見送り`
-  plus `outcome` (`未応募` = dropped before applying / `不採用` = rejected / `辞退` =
-  withdrew after applying) and a one-line `closed_reason` — so `list_pipeline.py` can
-  count the post-application hit rate.
-- `jd_url` points at the window that actually accepts an application, not the job board's
-  listing.
-- `python scripts/validate_data.py` machine-checks all of the above (plus ja/en id sync,
-  dates, selection references, company-message evidence and `opportunities/seen.yaml`).
-  Run it after editing anything under `data/`, `companies/`, `opportunities/`, `agents/`
-  or `interviews/`.
+- Company → opportunity → generated CV → interview are linked via front-matter and
+  `[[links]]`.
+- `status` vocabularies are fixed in [AGENTS.md](AGENTS.md) §6 (dedupe and
+  `scripts/list_pipeline.py` depend on them). When you close an opportunity, keep the
+  reason **out of** `status` and put it in `outcome` (`未応募` / `不採用` / `辞退`),
+  `closed_reason` and `closed_date` — that is what keeps "walked away" and "was rejected"
+  countable apart.
+- Run `python scripts/validate_data.py` after editing `data/`, `selection.yaml`,
+  `companies/*/messages.yaml`, `interviews/*.md`, `opportunities/*.md`, `agents/*.md` or
+  `opportunities/seen.yaml`, and `python scripts/list_pipeline.py` for the pipeline
+  overview.
 - Full agent instructions live in [AGENTS.md](AGENTS.md).
 
 ## License

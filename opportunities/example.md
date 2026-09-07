@@ -5,16 +5,16 @@ title: コーポレートIT / 情報システム（架空・フォーマット�
 agent: （要確認）
 agent_company: （要確認）
 status: 検討中                     # 検討中 / 応募前 / 書類選考中 / 面接中 / 内定 / 見送り
-                                  # ⚠️ status に理由を括弧書きしない（見送り（書類選考落ち）は NG）
-outcome:                          # status: 見送り のときだけ必須 — 未応募 / 不採用 / 辞退
-closed_reason:                    # 見送りの理由を一行で（経緯は「選考ログ」へ）
-closed_date:                      # 終了が確定した日（YYYY-MM-DD、任意）
+# 見送りにするときだけ次の3つを埋める（理由を status に括弧書きしない）:
+# outcome: 未応募                  # 未応募 / 不採用 / 辞退
+# closed_reason: 見送りの理由を一行で（経緯は選考ログへ）
+# closed_date: 2026-01-31
 employment: 正社員
 location: 東京都内
 salary: （要確認）
 report_line: （要確認）
 team_size: IT 2名
-jd_url: https://example.com/careers/corporate-it   # 実際に応募できる一次窓口（ボード掲載はコメント併記）
+jd_url: https://example.com/careers/corporate-it
 applied_date:
 cv:                               # tailor-cv で生成したら出力先を記入（例: cv/output/example/）
 updated: 2026-01-01
@@ -56,8 +56,3 @@ updated: 2026-01-01
 
 ## 選考ログ
 - 2026-01-01: （見本）案件を登録。企業調査・リスク分析を実施。
-
-> 終了したときは `status: 見送り` に加えて `outcome` を必ず埋める。
-> **`未応募`**（応募前に自分で落とした）/ **`不採用`**（先方に落とされた）/
-> **`辞退`**（応募後に自分で降りた）の3つを分けておくと、
-> `scripts/list_pipeline.py` が応募後の歩留まりを数えられる。

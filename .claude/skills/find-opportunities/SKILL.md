@@ -1,6 +1,6 @@
 ---
 name: find-opportunities
-description: Source new job openings that match the user's positioning — search job boards, ATS site: searches and English-language JP boards (plus a job-search MCP or LinkedIn if one is connected), filter out noise, and produce a positioning-ranked shortlist. Use when the user asks to find/search/探す new 求人 or 案件, scan job boards, or wants "よさげな求人" surfaced. This is the top of the funnel: hand promising hits to vet-opportunity for a full 壁打ち, and to tailor-cv for a CV. For vetting a single already-found role, use vet-opportunity instead.
+description: Source new job openings that match the user's positioning — search job boards, ATS pages and (when connected) the HERP Career or LinkedIn MCP, filter out noise, and produce a positioning-ranked shortlist. Use when the user asks to find/search/探す new 求人 or 案件, scan job boards, or wants "よさげな求人" surfaced. This is the top of the funnel: hand promising hits to vet-opportunity for a full 壁打ち, and to tailor-cv for a CV. For vetting a single already-found role, use vet-opportunity instead.
 ---
 
 # find-opportunities
@@ -15,9 +15,11 @@ a clean primary link per role, ready to hand to `vet-opportunity`.
 ## Read first (the axis)
 1. `data/positioning.md` — target "form", differentiators, compensation anchor,
    must-checks, and **dealbreakers**. Every include/exclude decision ties back here.
+   The salary floor and the commute/remote constraint written there are the two
+   filters that cut the most noise — apply them at the source, not at the end.
 2. `data/retirement-plan.md` — **if it exists**, its 足切り conditions are hard filters
    applied *before* ranking: a role that fails one is not a candidate, however well it
-   fits the axis. Its 順位付け conditions are tie-breakers in step 4.
+   fits the axis. Its 順位付け conditions are tie-breakers in the scoring step.
 3. Run `python scripts/list_pipeline.py` — one-shot view of existing opportunities,
    agents' `introduced_companies`, and `opportunities/seen.yaml` (roles already
    surfaced/passed on). Use it to **dedupe**: don't re-surface roles already
@@ -25,143 +27,147 @@ a clean primary link per role, ready to hand to `vet-opportunity`.
 
 ## Sources & how to use them
 
-The layers below are ordered by yield. **They do not overlap much** — the small
-companies that a startup board indexes are usually absent from the aggregators, and the
-ones hiring through their own ATS are absent from both. Running only the first layer is
-the most common way to miss the best-fitting roles. Report which layers you ran and how
-many hits each produced, **including the ones that returned zero**.
+The layers below do **not** overlap much: a board-only search misses the companies
+that publish through an ATS, and an ATS-only search misses the ones that only sit on
+a board. Run several layers per session and record which ones you ran, including the
+ones that returned **zero** — a 0 is information, not a failed search.
 
-### A. A job-search MCP (first, when one is connected)
-If a job-search MCP is connected (e.g. a board's own server), **use it before scraping
-board HTML** — it returns structured fields instead of rendered pages, with no ads.
+The URL shapes and per-site quirks below were probed in **2026-08** against a Japanese
+corporate-IT search. If one has moved, find the current one rather than silently
+dropping the source; if the user's target role differs, swap the keywords but keep
+the retrieval mechanics.
 
-- Search with **several narrow queries** rather than one broad one (e.g. 情報システム /
-  コーポレートIT / 情シス 立ち上げ / IT インフラ), then merge and dedupe.
-- Map the axis onto the filters the server offers: salary floor, company size band,
-  remote-work type, prefecture/city for the commute constraint.
-- Pull the **full JD** for every role you intend to shortlist — never rank on a search
-  snippet. If the server exposes a company endpoint, use it: headcount history, funding
-  rounds and the **full list of open roles** answer the 規模・資金・体制 questions that
-  board HTML hides, and `vet-opportunity` reuses the same call.
-- Follow the server's citation rules (some require Markdown links rather than raw URLs).
-- ⚠️ **A write call on such a server touches the user's real account.** Anything that
-  edits a career profile or preferences can attract 面談オファー from companies — it is
-  an outward-facing action. **Never call it on your own initiative**: only on an explicit
-  request, and then read the current values first, merge rather than overwrite, show the
-  exact text, and get an explicit 「保存してよいですか?」 yes.
+### HERP Career MCP (primary, when connected) — structured, ad-free
+Small startups are buried under promoted ads on the big platforms but are exactly
+what HERP indexes. When the `HERP_Career_MCP_Server` tools are available, **use them
+before scraping board HTML** — they return structured fields instead of rendered pages.
 
-### B. Job boards and ATS searches (always — this is the bulk of the yield)
+- `search_jobs(...)` → companies (each with a few representative jobs) + pagination.
+  Useful filters: `keyword`, `jobRoleIds`, `prefCodes` / `cityCodes`, `employeeRanges`,
+  `remoteworks`, `salary`, `employmentTypeId`, `sort`, `page`, `limit`.
+  Map the axis onto the filters (`salary` = the floor from `positioning.md`,
+  `employeeRanges` = the org-size band, `remoteworks` / `prefCodes` = the commute
+  constraint), and run **several narrow queries** rather than one broad one, then
+  merge and dedupe.
+- `get_job(id)` → full JD: salary range, **required/preferred skills**, locations,
+  remote-work type, company info. Pull this for every candidate you intend to
+  shortlist — never rank on a search snippet alone.
+- `get_company(slug)` → company profile **plus the full job list, directors, funding
+  history and number-of-employees history**. This answers the 規模・資金・体制
+  questions board HTML hides, and `vet-opportunity` reuses it (see that skill's step 1).
+- **Links must be Markdown, never raw URLs** (the MCP requires this):
+  求人 `https://herp.careers/careers/companies/{companySlug}/jobs/{id}?utm_source=herp_career_mcp`,
+  企業 `https://herp.careers/careers/companies/{companySlug}?utm_source=herp_career_mcp`.
+- `get_user_profile()` is read-only; use it to cross-check what HERP knows about the
+  user. **`data/positioning.md` remains the axis** — if they disagree, the repo wins
+  and the gap is worth mentioning.
+- ⚠️ **`update_user_career_preferences` writes to the user's real HERP account** and can
+  trigger 面談オファー from companies. Treat it as an outward-facing action:
+  **never call it on your own initiative.** Only when the user explicitly asks — and
+  then `get_user_profile()` first, merge rather than overwrite, show the exact text,
+  and get an explicit 「保存してよいですか?」 yes.
+
+### B1. Role-specific job boards
 Use web search / fetch. Ask, per posting, for: company, title, location, salary if
-shown, remote/出社 policy, and the **business domain**. If a URL shape below has moved,
-find the current one rather than silently dropping the source.
+shown, remote/出社 policy, and the **business domain**.
+- **HERP Careers (HTML)** — `https://herp.careers/careers/jobs?job-role-ids=<role>`
+  (fallback when the MCP is not connected).
+- **SYNCA** — corporate/back-office board. ⚠️ As of 2026-08, `synca.net` /
+  `candidate.synca.net` refused both curl and browser navigation; only WebSearch
+  snippets are reachable. Chase anything interesting to the company's own page.
+- 日経転職版 (startup filter), コトラ (ハイクラス), plus any domain-specific board.
 
-**B1. 職種特化ボード** — where on-axis roles are indexed by role, not by keyword.
-- **HERP Careers** — startup 図鑑; filter by role (e.g. 情報システム / コーポレートIT).
-- **SYNCA (シンカ)** — corporate/back-office focused (情報システム / 一人目情シス).
-- Others as fit: 日経転職版, ハイクラス系エージェント媒体, ドメイン特化ボード.
+### B2. ATS cross-search via `site:` — reaches what the boards do not index
+Talentio / HRMOS / Jobcan have **no public cross-search** (`hrmos.co/pages/search`
+is 404, `recruit.jobcan.jp/search` is 400). Hit the per-company pages through
+**WebSearch `site:` queries** instead:
+- `site:open.talentio.com <役割キーワード>` / `site:hrmos.co <役割キーワード>` /
+  `site:recruit.jobcan.jp <役割キーワード>`
+- English / foreign-capital roles: `site:boards.greenhouse.io <role> Japan` /
+  `site:jobs.lever.co <role> Tokyo`
 
-**B2. ATS 横断（`site:` 検索）— boards don't index these at all.**
-Talentio / HRMOS / Jobcan have **no public cross-company search**, so reach the
-individual company pages through a search engine's `site:` operator instead:
-- `site:open.talentio.com 情報システム` / `コーポレートIT` / `社内IT`
-- `site:hrmos.co コーポレートIT` / `情報システム`
-- `site:recruit.jobcan.jp 情報システム`
-- English / foreign-affiliated roles: `site:boards.greenhouse.io Corporate IT Japan`,
-  `site:jobs.lever.co IT Tokyo` — thin for JP corporate IT, so keep these last.
+This layer is where the roles that appear on **no board at all** come from — in the
+2026-08 run it was the only source for several well-funded startups. Always open the
+JD itself for title, salary and 出社頻度; **never rank on the search snippet**. The
+retrieval differs per ATS, and getting this wrong looks like "the page is empty":
+- **Talentio does not work with WebFetch.** The page is fully client-rendered and
+  WebFetch returns little more than the logo. The JD is embedded in the HTML as
+  **escaped JSON**: fetch with curl → `html.unescape` → pick out the
+  `"name":"…","value":"…"` pairs. Salary, location, work style, requirements and
+  benefits all come back keyed.
+- **HRMOS reads fine with WebFetch.**
+- **Jobcan search snippets go stale.** Postings 404, and a role the snippet implies
+  may not exist at all — **confirm on the company's own job list** before shortlisting.
+- **Greenhouse / Lever carry very few Japan-based corporate roles.** Lowest priority.
 
-⚠️ **Fetching the JD body differs per ATS.** Get this wrong and the posting looks empty:
-- **Talentio does not respond to a plain fetch.** The page is fully client-rendered and a
-  fetch returns little more than the company logo. The JD is embedded in the HTML as
-  **escaped JSON** — fetch with `curl`, run `html.unescape`, then pull the
-  `"name":"…","value":"…"` pairs: 賃金・勤務地・勤務形態・応募資格・福利厚生 come out
-  keyed and intact.
-- **HRMOS reads fine with an ordinary fetch.**
-- **Jobcan's search snippets go stale.** A snippet can point at a posting that now 404s,
-  or at a role the company never listed. **Confirm the posting exists on the company's
-  own listing page** before putting it in a shortlist.
+### B3. Public listings of foreign-capital recruiting agencies — off by default
+Probed in 2026-08 and **structurally unusable** for this workflow: the large agency
+sites either list every role under an anonymised employer label, render the list only
+via JS, or return 403 to fetching. ⚠️ A posting whose employer is hidden cannot be
+scored on **any** axis, and long-running anonymous listings are often
+母集団形成 (pipeline-building) rather than a real opening. Run this layer **only when
+the user explicitly asks** to target that market; otherwise spend the time on B2/B4.
 
-**B3. 在日英語圏ボード** — salary range and remote policy are usually stated outright,
-so the compensation floor and the commute constraint can be settled in the first pass.
-- **TokyoDev**, **Japan Dev**. Dev-centric, so corporate-IT hits are few — **zero is a
-  normal result here, not a failed search.**
-- Some of these sit behind a bot-protection layer that blocks a plain fetch on the
-  *detail* pages while the listing page reads fine. The listing usually carries salary,
-  remote policy and the Japanese-language requirement, so open detail pages with a
-  browser tool only for candidates that already survived the first filter.
+### B4. English-language boards in Japan — salary and remote are usually stated
+- **TokyoDev** — `https://www.tokyodev.com/jobs?q=<keyword>`
+- **Japan Dev** — `https://japan-dev.com/jobs?tag=<tag>`
 
-**B4. アグリゲータ（取りこぼし確認のみ）** — 求人ボックス and similar. Noisy and full of
-duplicates, so run them **after** B1〜B3 as a gap check, and always follow a hit back to
-the primary source (company careers page / the ATS JD) before shortlisting it. Boards
-that mostly hide salary (Wantedly, Green) don't let the compensation floor filter
-anything, so skip them unless the user asks.
+Their value is that most listings state a **salary range and a remote policy**, so the
+floor and the commute constraint can be applied on the first pass. They are dev-heavy,
+though — a 0 for a non-dev role is normal, not a failure.
+- **TokyoDev: the list reads with WebFetch, but job detail pages sit behind
+  Cloudflare (403, curl included)** — open details with a browser tool, and only for
+  candidates that already survived the list-level filter.
+- **Japan Dev: both list and detail read with WebFetch.**
 
-**B5. 外資系エージェントの公開求人 — off by default.** Postings from the large
-recruitment agencies routinely **withhold the company name** ("外資系企業"), and several
-of their listing pages are JS-rendered or block automated access. A role whose employer
-is unknown can't be scored on domain fit, structural risk, or 待遇 — the three things
-this skill exists to judge — and 母集団形成 postings are common at this layer. Run it
-only when the user explicitly asks for that segment.
+### B5. Aggregators — leftover check only
+- **求人ボックス** — `https://求人ボックス.com/{キーワード}の仕事` (percent-encode the host).
 
-### C. LinkedIn (optional) — only if a LinkedIn tool/MCP is connected
+Noisy and duplicated: run it **after** B1–B4 as a "did we miss anything" pass, and
+still trace every hit back to a primary source before shortlisting. Wantedly / Green
+are off by default because **most postings hide salary**, which disables the floor
+filter (use them only on explicit request).
+
+### LinkedIn MCP (complementary) — only when the MCP is connected
 - ⚠️ **This repo ships no LinkedIn setup, on purpose.** There is no official LinkedIn MCP
   server; third-party ones are mostly scrapers, and using one may violate LinkedIn's terms
   of service and put the user's account at risk. Do **not** recommend or install one — if
-  the user connects a tool themselves, that call (and its risk) is theirs. Everything below
-  applies only once such a tool is already connected.
-- ⚠️ **LinkedIn job results are ad-polluted**: the top rows are usually promoted
-  big-company ads, and an entire page of results being promoted (with the organic count
-  at zero) is a normal outcome, not a broken search. Do **not** treat the first rows as
-  the best matches. Scan the returned ids/titles, pick the **organic, on-axis** ones, and
-  pull the clean full JD for those only.
-- **Keyword tips**: prefer single tokens (e.g. `コーポレートIT`) — two-token AND queries
-  and slang (情シス, 立ち上げ) tend to return 該当なし, which leaves only ads. Add English
-  role-level terms (`Head of IT`, `Corporate Engineer`, `IT Manager`).
-- **Never enter credentials yourself.** If sign-in is required, ask the user to do it.
-
-## 掲載日の取り方（求人票に日付が無いとき）
-
-"How long has this seat been open" is the substance of `vet-opportunity`'s
-確認チェックリスト①. **Old does not mean closed** — but a posting that has been up for a
-year changes what you should ask. Most ATSs carry the date in machine-readable form even
-when the rendered page doesn't show it. Try in this order:
-
-1. **The posting itself.** Some ATSs render a "Posted Date". Look before you dig.
-2. **JSON-LD `datePosted`** (the structured data emitted for job search engines) —
-   HRMOS publishes this. `curl` the page and grep:
-   ```bash
-   curl -sL "https://hrmos.co/pages/<company>/jobs/<id>" | grep -o '"datePosted"[^,]*'
-   ```
-3. **The ATS's JSON API.** BambooHR returns `datePosted` from
-   `https://<company>.bamboohr.com/careers/<id>/detail` with `Accept: application/json`
-   (`/careers/list` gives every open role). Workday returns `startDate` from
-   `/wday/cxs/<tenant>/<site>/job/<path>`.
-4. **Sometimes it cannot be had.** Some career sites publish neither structured data nor
-   an API. Then write 「不明」 and ask in the interview. **Never guess "new" or "old".**
-
-⚠️ **The Wayback Machine does not answer this.** Individual ATS job pages are typically
-uncrawled (zero snapshots), and snapshots of SPA listing pages contain only the app
-shell with no job data in them. More fundamentally it records *when a page was archived*,
-not *when a role opened* — an absent snapshot proves nothing except that no crawler came.
-
-⚠️ `datePosted` is the date the ATS first published the posting. It cannot distinguish
-"open continuously since then" from "closed and re-posted". Convert the elapsed time
-into questions — 「この枠はいつから空いていますか」「募集背景（増員 / 欠員 / 再編）は
-今も有効ですか」 — rather than into a deduction.
+  the user connects a tool themselves, that call (and its risk) is theirs. Everything
+  below applies only once such a tool is already connected.
+- `search_jobs(keywords, location, ...)` → a page **plus `job_ids`**.
+  ⚠️ **The result list is ad-polluted**: the top rows are almost always
+  「プロモーション」 (promoted big-company ads). Do **not** treat them as the best
+  matches. In the 2026-08 run, a role-specific Tokyo query returned **11 rows that were
+  all promoted and all unrelated** (kitchen, night shift, executive assistant) and
+  **zero organic hits** — an empty LinkedIn pass is normal.
+- Scan the returned `job_ids` / titles, pick the **organic, on-axis** ones, and call
+  `get_job_details(job_id)` for the **clean full JD**, company size/industry and the
+  hiring contact.
+- **Keyword tips** (the JP index is weak on colloquial / compound terms):
+  prefer **single tokens** over two-word ANDs and slang; add **English role-level
+  terms** (`Head of IT`, `Corporate Engineer`, `IT Manager`).
+- **Never enter credentials yourself.** If sign-in is required, ask the user to do it,
+  then retry the same call.
 
 ## Steps
 1. **Frame the search** from `positioning.md` (form, domain, salary floor, commute/
-   remote, dealbreakers) and, if present, `retirement-plan.md`'s 足切り conditions.
-   State the query set you'll run.
-2. **Run the searches** in yield order: a connected job-search MCP → B1〜B3 boards and
-   `site:` searches → LinkedIn in parallel if connected → B4 aggregators as a gap check.
-   Pull the clean full JD for on-axis hits. Report every layer you ran, zeros included.
+   remote, dealbreakers). State the query set you'll run.
+2. **Run the searches**, in this order of yield:
+   1. **HERP Career MCP** — several narrow `search_jobs` queries, then `get_job` on the
+      on-axis hits. Skip only if the MCP is not connected.
+   2. **B1 → B2 → B4** (boards → ATS `site:` search → English-language boards).
+      B2 and B4 do not overlap with the MCP layer, so they matter most on a thin run.
+   3. **LinkedIn MCP** in parallel if it is connected (`get_job_details` only for
+      on-axis `job_ids`).
+   4. **B5** as the final leftover check. **B3** only on explicit request.
+   Record which sources you ran and what each returned, **including the zeros**.
 3. **Dedupe** against the `list_pipeline.py` output (introduced companies, existing
    opportunities, and `seen.yaml`).
 4. **Score against positioning** and rank. For each candidate note: domain fit, role
    "form" (owner vs helpdesk/analyst vs people-manager), which differentiators it uses,
    salary vs the user's floor, commute/remote, and any dealbreaker hit.
-5. **Report a shortlist** — strongest-first, grouped (e.g. 「芯を食う」 vs 「面白いが
-   comp/規模で一段下」), each with a **clean primary link** and a one-line why/risk.
+5. **Report a shortlist** — strongest-first, grouped, each with a **clean primary link**
+   and a one-line why/risk.
 6. **Hand off** — offer to run `vet-opportunity` on the top pick(s) and `tailor-cv`
    once a target is chosen.
 
@@ -170,26 +176,30 @@ into questions — 「この枠はいつから空いていますか」「募集�
   brand, apply-ability, or title. Drop dealbreaker roles or flag them explicitly.
 - **No fabrication.** Company/role facts come from the JD or cited board pages. Mark
   unknowns (salary, level, team size) as **要確認** — don't guess.
+- **A posting with no employer name cannot be scored.** Say so and park it, rather than
+  ranking it on the agency's blurb.
 - **Balanced, not promotional.** Name the level/comp/structural risk next to the appeal.
 - **Dedupe** so the user isn't shown roles already introduced/applied/見送り.
-- **Prefer the primary window for the link.** A shortlist entry's link should be the page
-  that accepts an application (company careers page / ATS), not the board listing. Do
-  **not** state here that a posting is live or dead — confirming that is
-  `vet-opportunity`'s step 2. Don't write down as settled what you haven't settled.
+- **Prefer the primary application route as the link.** Use the window the user can
+  actually apply through (company careers page / ATS) over a board listing. A board's
+  "last updated" is the day the posting text was edited, **not** proof that the opening
+  is alive or dead — so don't call an old posting closed, or a fresh one live.
+  Confirming freshness and the application route is `vet-opportunity` step 2;
+  here, **don't state as settled what you have not settled**.
 - **Read-only sourcing.** Do **not** apply, save, or message a recruiter on the user's
   behalf — surface the link and let the user act. (Sign-in is the user's too.) This
-  includes any MCP call that writes to the user's account on a job platform: explicit
-  request + shown text + explicit consent, or not at all.
+  includes **`update_user_career_preferences`**, which edits the user's live HERP
+  profile: explicit request + shown text + explicit consent, or not at all.
 - This skill **finds and ranks**; it does not write repo files, with one exception:
   after the user reacts to the shortlist, append the roles they pass on (and, if they
   want, the surfaced-but-parked ones) to `opportunities/seen.yaml` so later runs don't
   re-surface them:
   ```yaml
   seen:
-    - { company: 株式会社◯◯, title: 情報システム, url: https://…, date: 2026-07-25, verdict: 見送り }
+    - { company: 株式会社◯◯, title: 情報システム, url: https://…, date: 2026-01-01, verdict: 見送り }
     # ⚠️ URL にクエリ文字列（`?`）が入るときは必ずクォートする。`{...}` のフロー形式では
     # `?` が YAML の予約文字なので、裸で書くと **ファイル全体がパース不能**になる。
-    - { company: 株式会社△△, title: 社内SE, url: "https://example.com/job.phtml?job_code=1", date: 2026-07-25, verdict: 見送り }
+    - { company: 株式会社△△, title: 社内SE, url: "https://example.com/job.phtml?job_code=1", date: 2026-01-01, verdict: 見送り }
   ```
   Then run `python scripts/validate_data.py` — its `check_seen` verifies the syntax,
   the required fields and the date format. A broken `seen.yaml` fails silently otherwise:
